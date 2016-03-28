@@ -1,0 +1,9 @@
+sudo: false
+language: python
+notifications:
+  email: false
+python:
+  - 3.4
+  - 2.7
+script:
+  - sh -x fetch.sh
