@@ -1,9 +1,17 @@
 sudo: false
 language: python
-notifications:
-  email: false
+
+addons:
+  apt:
+    packages:
+      - xsltproc
+
 python:
   - 3.4
   - 2.7
+
 script:
   - sh -x fetch.sh
+
+notifications:
+  email: false
