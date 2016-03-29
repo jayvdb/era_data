@@ -1,3 +1,5 @@
 downloads/
 .cache/
 ERA201*_journal_title_list.*
+schema201*.sql
+era_data.sqlite*

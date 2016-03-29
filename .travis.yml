@@ -6,9 +6,36 @@ addons:
     packages:
       - xsltproc
 
-python:
-  - 3.4
-  - 2.7
+env:
+  global:
+    - DBNAME=era_data
+
+matrix:
+  include:
+    - env: DB=sqlite3
+      python: 2.7
+
+    - env: DB=sqlite3
+      python: 3.4
+
+before_install:
+  - SQLCMD=$DB
+  - SQLCMD_QUIET=$SQLCMD
+
+  - if [ "$DB" = 'sqlite3' ]; then
+      DBNAME="$DBNAME.sqlite" ;
+    fi
+
+  - export SQLCMD; export SQLCMD_QUIET
+
+before_script:
+  # Create two schema scripts with tables prefixed era2010 and era2012
+  - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2010_journal\2/g' schema.sql > schema2010.sql
+  - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2012_journal\2/g' schema.sql > schema2012.sql
+
+  # Populate database with both schema
+  - $SQLCMD_QUIET $DBNAME < schema2010.sql
+  - $SQLCMD_QUIET $DBNAME < schema2012.sql
 
 script:
   # Download the journal lists and convert them to xml
@@ -18,6 +45,17 @@ script:
   - mv ERA2010_journal_title_list.xml ERA2010_journal_title_list.xml.orig
   - xsltproc --output ERA2010_journal_title_list.xml era_journal_list_2010_tidy.xsl ERA2010_journal_title_list.xml.orig
   - diff -uw ERA2010_journal_title_list.xml.orig ERA2010_journal_title_list.xml || true # || true ignores the exit code from diff
+
+  # Convert the xml to sql insert statements
+  - perl era_journal_list_sql.pl ERA2010_journal_title_list.xml era2010 $DB > ERA2010_journal_title_list.sql
+  - perl era_journal_list_sql.pl ERA2012_journal_title_list.xml era2012 $DB > ERA2012_journal_title_list.sql
+  - ls -l *.sql
+
+  # Insert the data into database
+  - $SQLCMD_QUIET $DBNAME < ERA2010_journal_title_list.sql
+  - $SQLCMD_QUIET $DBNAME < ERA2012_journal_title_list.sql
+
+  - if [ "$DB" = 'sqlite3' ]; then ls -al era_data.sqlite*; fi
 
 notifications:
   email: false
