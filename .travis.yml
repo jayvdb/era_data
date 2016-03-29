@@ -105,5 +105,6 @@ notifications:
   email: false
 
 cache:
+  pip: true
   directories:
     - .cache/era_xml
