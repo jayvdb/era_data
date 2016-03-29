@@ -68,6 +68,11 @@ before_install:
   - export SQLCMD; export SQLCMD_QUIET
 
 before_script:
+  - if [ "$DB" = 'sqlite3' -a -f .cache/sqlite_db/$DBNAME ]; then
+      cp .cache/sqlite_db/$DBNAME . ;
+      exit 0 ;
+    fi
+
   # Create two schema scripts with tables prefixed era2010 and era2012
   - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2010_journal\2/g' schema.sql > schema2010.sql
   - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2012_journal\2/g' schema.sql > schema2012.sql
@@ -81,7 +86,6 @@ before_script:
   - $SQLCMD_QUIET $DBNAME < schema2010.sql
   - $SQLCMD_QUIET $DBNAME < schema2012.sql
 
-script:
   # Download the journal lists and convert them to xml
   - sh -x fetch.sh
   - ls -l *.xml
@@ -99,7 +103,11 @@ script:
   - $SQLCMD_QUIET $DBNAME < ERA2010_journal_title_list.sql
   - $SQLCMD_QUIET $DBNAME < ERA2012_journal_title_list.sql
 
-  - if [ "$DB" = 'sqlite3' ]; then ls -al era_data.sqlite*; fi
+script:
+  - if [ "$DB" = 'sqlite3' ]; then ls -al $DBNAME*; fi
+
+  # Cache the sqlite database
+  - if [ "$DB" = 'sqlite3' ]; then cp $DBNAME .cache/sqlite_db/$DBNAME ; fi
 
 notifications:
   email: false
@@ -107,3 +115,4 @@ notifications:
 cache:
   directories:
     - .cache/era_xml
+    - .cache/sqlite_db
