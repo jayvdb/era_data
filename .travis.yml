@@ -21,3 +21,7 @@ script:
 
 notifications:
   email: false
+
+cache:
+  directories:
+    - .cache/era_xml

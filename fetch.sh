@@ -1,9 +1,20 @@
+#!/bin/sh
+
+CACHE_DIR=.cache/era_xml
+
+if [ -f $CACHE_DIR/ERA2010_journal_title_list.xml.bz2 -a -f $CACHE_DIR/ERA2012_journal_title_list.xml.bz2 ]; then
+  cp $CACHE_DIR/* .
+  bunzip2 *.xml.bz2
+  exit 0
+fi
+
 # Download files and extract contents
 
 mkdir downloads
 cd downloads
 
 wget http://content.webarchive.nla.gov.au/gov/wayback/20120317002747/http://www.arc.gov.au/zip/ERA2010_tech_pack.zip
+
 mkdir ERA2010_tech_pack
 cd ERA2010_tech_pack
 unzip ../ERA2010_tech_pack.zip
@@ -33,6 +44,11 @@ python -c "import json, dicttoxml; data = json.load(open('downloads/ERA2012Journ
 
 xsltproc --output downloads/ERA2012JournalList.xml  era_journal_list_tidy.xsl downloads/ERA2012JournalList.messy-xml
 
-# Copy both files into the workarea directory
-cp downloads/ERA2010_tech_pack/code-table/XML-Format/ERA2010_journal_title_list.xml .
-cp downloads/ERA2012JournalList.xml ERA2012_journal_title_list.xml
+# Copy both files into the output directory
+mkdir -p $CACHE_DIR/
+cp downloads/ERA2010_tech_pack/code-table/XML-Format/ERA2010_journal_title_list.xml $CACHE_DIR
+cp downloads/ERA2012JournalList.xml $CACHE_DIR/ERA2012_journal_title_list.xml
+
+cp $CACHE_DIR/* .
+
+bzip2 $CACHE_DIR/*
