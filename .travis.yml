@@ -8,6 +8,8 @@ virtualenv:
 addons:
   apt:
     packages:
+      - python-openpyxl
+      - python-texttable
       - xsltproc
 
 env:
