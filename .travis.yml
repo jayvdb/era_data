@@ -1,10 +1,13 @@
 sudo: false
 language: python
 
+virtualenv:
+  system_site_packages: true
+
 addons:
   apt:
     packages:
-      - xsltproc
+      - python-lxml
 
 env:
   global:
@@ -13,7 +16,7 @@ env:
 matrix:
   include:
     - env: DB=pgsql
-      python: 3.4
+      python: 2.7
 
     - env: DB=oracle
       language: python
@@ -23,9 +26,13 @@ matrix:
 
     - env: DB=sqlite3
       python: 3.4
+      virtualenv:
+        system_site_packages: false
+      addons:
+        apt: false
 
     - env: DB=mysql
-      python: 3.4
+      python: 2.7
 
 before_install:
   # 'sqlite3' and 'mysql' are the command name, and they are quiet by default
@@ -87,7 +94,7 @@ script:
   - ls -l *.xml
   # Remove the duplicate disciplines from the ERA2010 journal list
   - mv ERA2010_journal_title_list.xml ERA2010_journal_title_list.xml.orig
-  - xsltproc --output ERA2010_journal_title_list.xml era_journal_list_2010_tidy.xsl ERA2010_journal_title_list.xml.orig
+  - lxmlproc --output ERA2010_journal_title_list.xml era_journal_list_2010_tidy.xsl ERA2010_journal_title_list.xml.orig
   - diff -uw ERA2010_journal_title_list.xml.orig ERA2010_journal_title_list.xml || true # || true ignores the exit code from diff
 
   # Convert the xml to sql insert statements

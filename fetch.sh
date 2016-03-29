@@ -46,7 +46,7 @@ python -c "import pyexcel, pyexcel.ext.text, pyexcel.ext.xlsx; sheet = pyexcel.s
 python -c "import json, dicttoxml; data = json.load(open('downloads/ERA2012JournalList.json')); f = open('downloads/ERA2012JournalList.messy-xml', 'wb'); f.write(dicttoxml.dicttoxml(data, attr_type=False, custom_root='JournalList')); f.close()"
 
 # Post-process the dicttoxml XML into the ERA 2010 journal list XML format
-xsltproc --output downloads/ERA2012JournalList.xml  era_journal_list_tidy.xsl downloads/ERA2012JournalList.messy-xml
+lxmlproc --output downloads/ERA2012JournalList.xml  era_journal_list_tidy.xsl downloads/ERA2012JournalList.messy-xml
 
 # Copy both files into the output directory
 mkdir -p $CACHE_DIR/

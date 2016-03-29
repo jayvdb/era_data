@@ -3,3 +3,6 @@ pyexcel-xlsx
 git+https://github.com/pyexcel/pyexcel-text
 
 dicttoxml
+
+lxml  # need for lxmlproc; see https://github.com/nicferrier/lxmlproc/pull/1
+lxmlproc
