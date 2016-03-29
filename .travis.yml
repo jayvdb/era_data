@@ -11,7 +11,13 @@ python:
   - 2.7
 
 script:
+  # Download the journal lists and convert them to xml
   - sh -x fetch.sh
+  - ls -l *.xml
+  # Remove the duplicate disciplines from the ERA2010 journal list
+  - mv ERA2010_journal_title_list.xml ERA2010_journal_title_list.xml.orig
+  - xsltproc --output ERA2010_journal_title_list.xml era_journal_list_2010_tidy.xsl ERA2010_journal_title_list.xml.orig
+  - diff -uw ERA2010_journal_title_list.xml.orig ERA2010_journal_title_list.xml || true # || true ignores the exit code from diff
 
 notifications:
   email: false
