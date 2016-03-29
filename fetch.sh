@@ -17,7 +17,7 @@ wget http://content.webarchive.nla.gov.au/gov/wayback/20120317002747/http://www.
 
 mkdir ERA2010_tech_pack
 cd ERA2010_tech_pack
-unzip ../ERA2010_tech_pack.zip
+unzip ../ERA2010_tech_pack.zip code-table/XML-Format/ERA2010_journal_title_list.xml
 cd ..
 
 # The 2012 tech pack can be obtained from here, and it contains the journal list in XSLX format
