@@ -15,8 +15,11 @@ matrix:
     - env: DB=pgsql
       python: 3.4
 
-    - env: DB=sqlite3
+    - env: DB=oracle
+      language: python
       python: 2.7
+      sudo: required
+      cache: false
 
     - env: DB=sqlite3
       python: 3.4
@@ -40,6 +43,28 @@ before_install:
       SQLCMD_QUIET="psql -q" ;
     fi
 
+  - if [ "$DB" = 'oracle' ]; then
+      export DBNAME="/" ;
+
+      if [ -z "$ORACLE_LOGIN_ssousername" -o -z "$ORACLE_LOGIN_password" ]; then
+        echo ORACLE_LOGIN_ssousername or ORACLE_LOGIN_password are not set ;
+        echo Oracle XE can not be installed ;
+        exit 101 ;
+      fi ;
+
+      SQLCMD=sqlplus ;
+      SQLCMD_QUIET="sqlplus -s" ;
+
+      export ORACLE_COOKIE=sqldev ;
+      export ORACLE_FILE=oracle11g/xe/oracle-xe-11.2.0-1.0.x86_64.rpm.zip ;
+      export ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe ;
+      export ORACLE_SID=XE ;
+      export PATH=$PATH:$ORACLE_HOME/bin ;
+      wget 'https://github.com/cbandy/travis-oracle/archive/v2.0.0.tar.gz'; mkdir -p .travis/oracle ; tar xz --strip-components 1 -C .travis/oracle -f v2.0.0.tar.gz ;
+      bash -x .travis/oracle/download.sh ;
+      bash -x .travis/oracle/install.sh ;
+    fi
+
   - export SQLCMD; export SQLCMD_QUIET
 
 before_script:
@@ -50,7 +75,7 @@ before_script:
   - if [ "$DB" = 'mysql' ]; then sed -ri 's/varchar2\((1?[0-9][0-9]?)\)/varchar(\1)/;s/varchar2\(([0-9]+)\)/text(\1)/' schema2010.sql schema2012.sql; fi
   - if [ "$DB" = 'pgsql' ]; then sed -ri 's/varchar2\(([0-9]+)\)/varchar(\1)/' schema2010.sql schema2012.sql; fi
 
-  - if [ "$DB" != 'sqlite3' ]; then echo 'create database era_data;' | $SQLCMD; fi
+  - if [ "$DB" != 'sqlite3' -a "$DB" != 'oracle' ]; then echo 'create database era_data;' | $SQLCMD; fi
 
   # Populate database with both schema
   - $SQLCMD_QUIET $DBNAME < schema2010.sql
