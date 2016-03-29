@@ -14,19 +14,19 @@ env:
 matrix:
   include:
     - env: DB=pgsql
-      python: 3.4
+      python: 3.4_with_system_site_packages
 
     - env: DB=oracle
       language: python
-      python: 2.7
+      python: 2.7_with_system_site_packages
       sudo: required
       cache: false
 
     - env: DB=sqlite3
-      python: 3.4
+      python: 3.4_with_system_site_packages
 
     - env: DB=mysql
-      python: 3.4
+      python: 3.4_with_system_site_packages
 
 before_install:
   # 'sqlite3' and 'mysql' are the command name, and they are quiet by default
