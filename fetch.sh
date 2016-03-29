@@ -31,17 +31,21 @@ cd ..
 # However we can download only the journal list
 wget http://content.webarchive.nla.gov.au/gov/wayback/20140212052430/http://www.arc.gov.au/xls/era12/ERA2012JournalList.xlsx
 
-mkdir ERA2012_journal_list
-cd ERA2012_journal_list
+# We could extract the xlsx, and extract the data that way
+# mkdir ERA2012_journal_list
+# cd ERA2012_journal_list
+# unzip ../ERA2012JournalList.xlsx
+# cd ..
 
-unzip ../ERA2012JournalList.xlsx
-cd ../..
+# Leave the downloads directory
+cd ..
 
-# Extract ERA 2012 journal list into ERA 2010 journal list XML format
+# Extract ERA 2012 journal list and convert it to XML
 python -c "import pyexcel, pyexcel.ext.text, pyexcel.ext.xlsx; sheet = pyexcel.sheets.NominableSheet(pyexcel.get_sheet(file_name='downloads/ERA2012JournalList.xlsx'), name_columns_by_row=0); pyexcel.save_as(array=sheet, dest_file_name='downloads/ERA2012JournalList.json')"
 
 python -c "import json, dicttoxml; data = json.load(open('downloads/ERA2012JournalList.json')); f = open('downloads/ERA2012JournalList.messy-xml', 'wb'); f.write(dicttoxml.dicttoxml(data, attr_type=False, custom_root='JournalList')); f.close()"
 
+# Post-process the dicttoxml XML into the ERA 2010 journal list XML format
 xsltproc --output downloads/ERA2012JournalList.xml  era_journal_list_tidy.xsl downloads/ERA2012JournalList.messy-xml
 
 # Copy both files into the output directory
