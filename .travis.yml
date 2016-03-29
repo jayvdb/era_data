@@ -12,18 +12,32 @@ env:
 
 matrix:
   include:
+    - env: DB=pgsql
+      python: 3.4
+
     - env: DB=sqlite3
       python: 2.7
 
     - env: DB=sqlite3
       python: 3.4
 
+    - env: DB=mysql
+      python: 3.4
+
 before_install:
+  # 'sqlite3' and 'mysql' are the command name, and they are quiet by default
   - SQLCMD=$DB
   - SQLCMD_QUIET=$SQLCMD
 
   - if [ "$DB" = 'sqlite3' ]; then
       DBNAME="$DBNAME.sqlite" ;
+    fi
+
+  - if [ "$DB" = 'pgsql' ]; then
+      export PGUSER=postgres ;
+
+      SQLCMD=psql ;
+      SQLCMD_QUIET="psql -q" ;
     fi
 
   - export SQLCMD; export SQLCMD_QUIET
@@ -32,6 +46,11 @@ before_script:
   # Create two schema scripts with tables prefixed era2010 and era2012
   - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2010_journal\2/g' schema.sql > schema2010.sql
   - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2012_journal\2/g' schema.sql > schema2012.sql
+
+  - if [ "$DB" = 'mysql' ]; then sed -ri 's/varchar2\((1?[0-9][0-9]?)\)/varchar(\1)/;s/varchar2\(([0-9]+)\)/text(\1)/' schema2010.sql schema2012.sql; fi
+  - if [ "$DB" = 'pgsql' ]; then sed -ri 's/varchar2\(([0-9]+)\)/varchar(\1)/' schema2010.sql schema2012.sql; fi
+
+  - if [ "$DB" != 'sqlite3' ]; then echo 'create database era_data;' | $SQLCMD; fi
 
   # Populate database with both schema
   - $SQLCMD_QUIET $DBNAME < schema2010.sql
