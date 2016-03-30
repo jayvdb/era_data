@@ -36,7 +36,7 @@ Usage
 -----
 The datasets are processed automatically after each checkin on the following two services:
 * [Travis-CI](https://travis-ci.org/jayvdb/era_data/builds) - four Linux jobs, loading the data into Sqlite3, PosgresSQL, Mysql and Oracle databases.  The databases are destroyed at the end of the build.
-* [Appveyor CI](https://ci.appveyor.com/project/jayvdb/era-data) - one Microsoft Windows job, producing [artifacts](https://ci.appveyor.com/project/jayvdb/era-data/build/1.0.1/artifacts) from the transformations.
+* [Appveyor CI](https://ci.appveyor.com/project/jayvdb/era-data) - one Microsoft Windows job, producing [artifacts](https://ci.appveyor.com/project/jayvdb/era-data/build/artifacts) from the transformations.
 
 One way to use this repository is to fork the repository on Github, and
 add your own transforms or analysis to the scripts in your fork.
