@@ -108,6 +108,8 @@ script:
 
   - if [ "$DB" = 'sqlite3' ]; then ls -al era_data.sqlite*; fi
 
+  - if [ "$DB" = 'sqlite3' ]; then py.test-3.4 --sqlalchemy-connect-url="sqlite:///era_data.sqlite" ; fi
+
 notifications:
   email: false
 
