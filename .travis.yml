@@ -64,9 +64,10 @@ before_install:
       SQLCMD_QUIET="psql -q" ;
     fi
 
+  # pip install mysqldb fails 'Could not find any downloads that satisfy the requirement mysqldb'
   - if [ "$DB" = 'mysql' ]; then
       DBURL="mysql://travis@localhost/era_data" ;
-      PYDBD=mysqldb ;
+      PYDBD="" ;
     fi
 
   - if [ "$DB" = 'oracle' ]; then
