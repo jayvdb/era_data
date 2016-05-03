@@ -90,27 +90,6 @@ before_script:
   - $SQLCMD_QUIET $DBNAME < schema2012.sql
 
 script:
-  # Download the journal lists and convert them to xml
-  - sh -x fetch.sh
-  - ls -l *.xml
-  # Remove the duplicate disciplines from the ERA2010 journal list
-  - mv ERA2010_journal_title_list.xml ERA2010_journal_title_list.xml.orig
-  - lxmlproc --output ERA2010_journal_title_list.xml era_journal_list_2010_tidy.xsl ERA2010_journal_title_list.xml.orig
-  - diff -uw ERA2010_journal_title_list.xml.orig ERA2010_journal_title_list.xml || true # || true ignores the exit code from diff
-
-  # Convert the xml to sql insert statements
-  - perl era_journal_list_sql.pl ERA2010_journal_title_list.xml era2010 $DB > ERA2010_journal_title_list.sql
-  - perl era_journal_list_sql.pl ERA2012_journal_title_list.xml era2012 $DB > ERA2012_journal_title_list.sql
-  - ls -l *.sql
-
-  # Insert the data into database
-  - $SQLCMD_QUIET $DBNAME < ERA2010_journal_title_list.sql
-  - $SQLCMD_QUIET $DBNAME < ERA2012_journal_title_list.sql
-
-  - if [ "$DB" = 'sqlite3' ]; then ls -al era_data.sqlite*; fi
-
-  - if [ -n "$PYDBD" ]; then pip install $PYDBD; fi
-
   - py.test --sqlalchemy-connect-url="$DBURL"
 
 notifications:
