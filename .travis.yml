@@ -15,34 +15,11 @@ env:
 
 matrix:
   include:
-    - env: DB=pgsql
-      python: 2.7
-      addons:
-        apt:
-          packages:
-            - python-lxml
-            - python-psycopg2  # python3-psycopg2 is also available
-
     - env: DB=oracle
       language: python
       python: 2.7
       sudo: required
       cache: false
-
-    - env: DB=sqlite3
-      python: 3.4
-      virtualenv:
-        system_site_packages: false
-      addons:
-        apt: false
-
-    - env: DB=mysql
-      python: 2.7
-      addons:
-        apt:
-          packages:
-            - python-lxml
-            - python-mysqldb  # No Python 3 support
 
 before_install:
   # 'sqlite3' and 'mysql' are the command name, and they are quiet by default
@@ -89,9 +66,11 @@ before_install:
       export ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe ;
       export ORACLE_SID=XE ;
       export PATH=$PATH:$ORACLE_HOME/bin ;
+      export LD_LIBRARY_PATH=$ORACLE_HOME/lib ;
       wget 'https://github.com/cbandy/travis-oracle/archive/v2.0.0.tar.gz'; mkdir -p .travis/oracle ; tar xz --strip-components 1 -C .travis/oracle -f v2.0.0.tar.gz ;
       bash -x .travis/oracle/download.sh ;
       bash -x .travis/oracle/install.sh ;
+      ls $ORACLE_HOME/lib ;
     fi
 
   - export SQLCMD; export SQLCMD_QUIET
