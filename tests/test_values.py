@@ -10,8 +10,8 @@ def test_2010_southerly(connection):
     result = connection.execute(query).first()[0]
     assert result == 'Southerly: a review of Australian literature'
 
-def test_2010_southerly(connection):
-    era2010_journals = Table('era2012_journal', metadata, autoload=True, autoload_with=connection)
+def test_2012_southerly(connection):
+    era2012_journals = Table('era2012_journal', metadata, autoload=True, autoload_with=connection)
     query = select([era2012_journals.columns.title]).where(era2012_journals.columns.eraid == 11637)
     result = connection.execute(query).first()[0]
     assert result == 'Southerly: a review of Australian literature'

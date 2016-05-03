@@ -20,7 +20,7 @@ def test_2010_journal_for_count(connection):
     era2010_journal_for = Table('era2010_journal_for', metadata, autoload=True, autoload_with=connection)
     query = select([func.count(era2010_journal_for.columns.eraid)])
     result = connection.execute(query).scalar()
-    assert result == 20712
+    assert result == 26822
 
 def test_2012_journal_count(connection):
     era2012_journals = Table('era2012_journal', metadata, autoload=True, autoload_with=connection)
@@ -38,4 +38,4 @@ def test_2012_journal_for_count(connection):
     era2012_journal_for = Table('era2012_journal_for', metadata, autoload=True, autoload_with=connection)
     query = select([func.count(era2012_journal_for.columns.eraid)])
     result = connection.execute(query).scalar()
-    assert result == 20712
+    assert result == 32864
