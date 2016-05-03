@@ -7,5 +7,5 @@ dicttoxml
 lxml  # need for lxmlproc; see https://github.com/nicferrier/lxmlproc/pull/1
 lxmlproc
 
-sqlalchemy
+git+https://github.com/jayvdb/sqlalchemy@oracle-passwordless
 pytest-sqlalchemy
