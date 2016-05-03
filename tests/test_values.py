@@ -48,5 +48,6 @@ def test_2012_unicode(connection):
     era2012_journals = Table('era2012_journal', metadata, autoload=True, autoload_with=connection)
     query = select([era2012_journals.columns.foreign_title]).where(era2012_journals.columns.eraid == 6859)
     result = connection.execute(query).first()[0]
-    # unicode(result)
+    if hasattr(result, 'decode'):
+        result = result.decode('utf8')
     assert result == 'Arkiv för nordisk filologi'
