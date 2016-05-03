@@ -9,14 +9,11 @@ def test_2010_count(connection):
     print(era2010_journals)
     query = select([func.count(era2010_journals.columns.eraid)])
     result = connection.execute(query).scalar()
-    print(result)
-    assert False
-
+    assert result == 20712
 
 def test_2012_count(connection):
     era2012_journals = Table('era2012_journal', metadata, autoload=True, autoload_with=connection)
     print(era2012_journals)
     query = select([func.count(era2012_journals.columns.eraid)])
     result = connection.execute(query).scalar()
-    print(result)
-    assert False
+    assert result == 22413

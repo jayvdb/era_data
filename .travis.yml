@@ -17,6 +17,11 @@ matrix:
   include:
     - env: DB=pgsql
       python: 2.7
+      addons:
+        apt:
+          packages:
+            - python-lxml
+            - python-psycopg2  # python3-psycopg2 is also available
 
     - env: DB=oracle
       language: python
@@ -33,6 +38,11 @@ matrix:
 
     - env: DB=mysql
       python: 2.7
+      addons:
+        apt:
+          packages:
+            - python-lxml
+            - python-mysqldb  # No Python 3 support
 
 before_install:
   # 'sqlite3' and 'mysql' are the command name, and they are quiet by default
@@ -41,17 +51,28 @@ before_install:
 
   - if [ "$DB" = 'sqlite3' ]; then
       DBNAME="$DBNAME.sqlite" ;
+      DBURL="sqlite:///era_data.sqlite" ;
+      PYDBD="" ;
     fi
 
   - if [ "$DB" = 'pgsql' ]; then
       export PGUSER=postgres ;
+      DBURL="postgresql://postgres@localhost/era_data" ;
+      PYDBD=psycopg2 ;
 
       SQLCMD=psql ;
       SQLCMD_QUIET="psql -q" ;
     fi
 
+  - if [ "$DB" = 'mysql' ]; then
+      DBURL="mysql://travis@localhost/era_data" ;
+      PYDBD=mysqldb ;
+    fi
+
   - if [ "$DB" = 'oracle' ]; then
       export DBNAME="/" ;
+      DBURL="oracle:///" ;
+      PYDBD=cx_oracle ;
 
       if [ -z "$ORACLE_LOGIN_ssousername" -o -z "$ORACLE_LOGIN_password" ]; then
         echo ORACLE_LOGIN_ssousername or ORACLE_LOGIN_password are not set ;
@@ -108,7 +129,9 @@ script:
 
   - if [ "$DB" = 'sqlite3' ]; then ls -al era_data.sqlite*; fi
 
-  - if [ "$DB" = 'sqlite3' ]; then py.test-3.4 --sqlalchemy-connect-url="sqlite:///era_data.sqlite" ; fi
+  - if [ -n "$PYDBD" ]; then pip install $PYDBD; fi
+
+  - py.test --sqlalchemy-connect-url="$DBURL"
 
 notifications:
   email: false
