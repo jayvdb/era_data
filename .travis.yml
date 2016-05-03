@@ -27,6 +27,8 @@ matrix:
       language: python
       python: 3.4
       sudo: required
+      virtualenv:
+        system_site_packages: false
       cache: false
 
     - env: DB=sqlite3
