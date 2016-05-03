@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import sys
+
 from sqlalchemy import Table, MetaData
 from sqlalchemy.sql import select
 
 metadata = MetaData()
+
+if sys.version_info[0] == 3:
+    unicode = str
 
 
 def test_2010_southerly(connection):
@@ -43,4 +48,5 @@ def test_2012_unicode(connection):
     era2012_journals = Table('era2012_journal', metadata, autoload=True, autoload_with=connection)
     query = select([era2012_journals.columns.foreign_title]).where(era2012_journals.columns.eraid == 6859)
     result = connection.execute(query).first()[0]
+    # unicode(result)
     assert result == 'Arkiv för nordisk filologi'

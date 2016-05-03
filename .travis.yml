@@ -66,7 +66,7 @@ before_install:
 
   # pip install mysqldb fails 'Could not find any downloads that satisfy the requirement mysqldb'
   - if [ "$DB" = 'mysql' ]; then
-      DBURL="mysql://travis@localhost/era_data" ;
+      DBURL="mysql://travis@localhost/era_data?charset=utf8" ;
       PYDBD="" ;
     fi
 
@@ -90,6 +90,7 @@ before_install:
       export ORACLE_SID=XE ;
       export PATH=$PATH:$ORACLE_HOME/bin ;
       export LD_LIBRARY_PATH=$ORACLE_HOME/lib ;
+      export NLS_LANG=American_America.UTF8 ;
       wget 'https://github.com/cbandy/travis-oracle/archive/v2.0.0.tar.gz'; mkdir -p .travis/oracle ; tar xz --strip-components 1 -C .travis/oracle -f v2.0.0.tar.gz ;
       bash -x .travis/oracle/download.sh ;
       bash -x .travis/oracle/install.sh ;
