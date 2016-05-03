@@ -72,7 +72,7 @@ $WGET http://content.webarchive.nla.gov.au/gov/wayback/20140212052430/http://www
 cd ..
 
 # Extract ERA 2012 journal list and convert it to XML
-python -c "import pyexcel, pyexcel.ext.text, pyexcel.ext.xlsx; sheet = pyexcel.sheets.NominableSheet(pyexcel.get_sheet(file_name='downloads/ERA2012JournalList.xlsx'), name_columns_by_row=0); pyexcel.save_as(array=sheet, dest_file_name='downloads/ERA2012JournalList.json')"
+python -c "import pyexcel, pyexcel.ext.xlsx; pyexcel.save_as(file_name='downloads/ERA2012JournalList.xlsx', dest_file_name='downloads/ERA2012JournalList.json', name_columns_by_row=0)"
 
 python -c "import json, dicttoxml; data = json.load(open('downloads/ERA2012JournalList.json')); f = open('downloads/ERA2012JournalList.messy-xml', 'wb'); f.write(dicttoxml.dicttoxml(data, attr_type=False, custom_root='JournalList')); f.close()"
 
