@@ -73,7 +73,7 @@ before_install:
   - if [ "$DB" = 'oracle' ]; then
       export DBNAME="/" ;
       DBURL="oracle:///" ;
-      PYDBD=cx_oracle ;
+      PYDBD=cx_oracle_on_ctypes ;
 
       if [ -z "$ORACLE_LOGIN_ssousername" -o -z "$ORACLE_LOGIN_password" ]; then
         echo ORACLE_LOGIN_ssousername or ORACLE_LOGIN_password are not set ;
@@ -89,6 +89,7 @@ before_install:
       export ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe ;
       export ORACLE_SID=XE ;
       export PATH=$PATH:$ORACLE_HOME/bin ;
+      export LD_LIBRARY_PATH=$ORACLE_HOME/lib ;
       wget 'https://github.com/cbandy/travis-oracle/archive/v2.0.0.tar.gz'; mkdir -p .travis/oracle ; tar xz --strip-components 1 -C .travis/oracle -f v2.0.0.tar.gz ;
       bash -x .travis/oracle/download.sh ;
       bash -x .travis/oracle/install.sh ;
