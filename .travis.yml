@@ -66,7 +66,7 @@ before_install:
 
   # pip install mysqldb fails 'Could not find any downloads that satisfy the requirement mysqldb'
   - if [ "$DB" = 'mysql' ]; then
-      DBURL="mysql://travis@localhost/era_data" ;
+      DBURL="mysql://travis@localhost/era_data?charset=utf8" ;
       PYDBD="" ;
     fi
 
