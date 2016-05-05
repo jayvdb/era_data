@@ -16,7 +16,7 @@ env:
 matrix:
   include:
     - env: DB=pgsql
-      python: 2.7
+      python: 3.4
       addons:
         apt:
           packages:
@@ -30,7 +30,7 @@ matrix:
       cache: false
 
     - env: DB=sqlite3
-      python: 3.4
+      python: 2.6
       virtualenv:
         system_site_packages: false
       addons:
@@ -103,8 +103,8 @@ before_script:
   - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2010_journal\2/g' schema.sql > schema2010.sql
   - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2012_journal\2/g' schema.sql > schema2012.sql
 
-  - if [ "$DB" = 'mysql' ]; then sed -ri 's/varchar2\((1?[0-9][0-9]?)\)/varchar(\1)/;s/varchar2\(([0-9]+)\)/text(\1)/' schema2010.sql schema2012.sql; fi
-  - if [ "$DB" = 'pgsql' ]; then sed -ri 's/varchar2\(([0-9]+)\)/varchar(\1)/' schema2010.sql schema2012.sql; fi
+  - if [ "$DB" = 'mysql' ]; then sed -ri 's/n?varchar2\((1?[0-9][0-9]?)\)/varchar(\1)/;s/n?varchar2\(([0-9]+)\)/text(\1)/' schema2010.sql schema2012.sql; fi
+  - if [ "$DB" = 'pgsql' ]; then sed -ri 's/n?varchar2\(([0-9]+)\)/varchar(\1)/' schema2010.sql schema2012.sql; fi
 
   - if [ "$DB" != 'sqlite3' -a "$DB" != 'oracle' ]; then echo 'create database era_data;' | $SQLCMD; fi
 

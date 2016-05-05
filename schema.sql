@@ -1,7 +1,7 @@
 CREATE TABLE journal (
 	eraid integer not null,
 	title varchar2(2000) not null,
-	foreign_title varchar2(2000),
+	foreign_title nvarchar2(2000),
 	rank char(2) check (rank in ('A*', 'A', 'B', 'C')),
 	multidisciplinary_ind char(1) default 'N' check (multidisciplinary_ind in ('Y', 'N')),
 	peer_reviewed_ind char(1),
