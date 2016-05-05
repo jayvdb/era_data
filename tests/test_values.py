@@ -26,7 +26,7 @@ def test_2010_southerly(connection):
     era2010_journal_for = Table('era2010_journal_for', metadata, autoload=True, autoload_with=connection)
     query = select([era2010_journal_for.columns.discipline]).where(era2010_journal_for.columns.eraid == 11637)
     result = connection.execute(query).fetchall()
-    assert result == [('190000', ), ('200000', ), ('210000', )]
+    assert sorted(result) == [('190000', ), ('200000', ), ('210000', )]
 
 def test_2012_southerly(connection):
     era2012_journals = Table('era2012_journal', metadata, autoload=True, autoload_with=connection)
@@ -42,7 +42,7 @@ def test_2012_southerly(connection):
     era2012_journal_for = Table('era2012_journal_for', metadata, autoload=True, autoload_with=connection)
     query = select([era2012_journal_for.columns.discipline]).where(era2012_journal_for.columns.eraid == 11637)
     result = connection.execute(query).fetchall()
-    assert result == [('190000', ), ('200000', ), ('210000', )]
+    assert sorted(result) == [('190000', ), ('200000', ), ('210000', )]
 
 def test_2012_unicode(connection):
     era2012_journals = Table('era2012_journal', metadata, autoload=True, autoload_with=connection)
