@@ -9,4 +9,4 @@ lxmlproc
 
 # cx_Oracle workaround https://bitbucket.org/zzzeek/sqlalchemy/issues/3705
 git+https://github.com/jayvdb/sqlalchemy@oracle-passwordless
-pytest-sqlalchemy
+git+https://github.com/jayvdb/pytest-sqlalchemy@travis
