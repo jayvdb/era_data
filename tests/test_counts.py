@@ -44,3 +44,66 @@ def test_2012_journal_for_count(connection):
     query = select([func.count(era2012_journal_for.columns.eraid)])
     result = connection.execute(query).scalar()
     assert result == 32864
+
+
+def test_2015_journal_count(connection):
+    era2015_journals = Table('era2015_journal', metadata, autoload=True, autoload_with=connection)
+    query = select([func.count(era2015_journals.columns.eraid)])
+    result = connection.execute(query).scalar()
+    assert result == 24028
+
+
+def test_2015_journal_issn_count(connection):
+    era2015_journal_issn = Table('era2015_journal_issn', metadata, autoload=True, autoload_with=connection)
+    query = select([func.count(era2015_journal_issn.columns.issn)])
+    result = connection.execute(query).scalar()
+    assert result == 39451
+
+
+def test_2015_journal_for_count(connection):
+    era2015_journal_for = Table('era2015_journal_for', metadata, autoload=True, autoload_with=connection)
+    query = select([func.count(era2015_journal_for.columns.eraid)])
+    result = connection.execute(query).scalar()
+    assert result == 37522
+
+
+def test_2015_consultation_journal_count(connection):
+    era2015_journals = Table('era2015c_journal', metadata, autoload=True, autoload_with=connection)
+    query = select([func.count(era2015_journals.columns.eraid)])
+    result = connection.execute(query).scalar()
+    assert result == 22497
+
+
+def test_2015_consultation_journal_issn_count(connection):
+    era2015_journal_issn = Table('era2015c_journal_issn', metadata, autoload=True, autoload_with=connection)
+    query = select([func.count(era2015_journal_issn.columns.issn)])
+    result = connection.execute(query).scalar()
+    assert result == 36848
+
+
+def test_2015_consultation_journal_for_count(connection):
+    era2015_journal_for = Table('era2015c_journal_for', metadata, autoload=True, autoload_with=connection)
+    query = select([func.count(era2015_journal_for.columns.eraid)])
+    result = connection.execute(query).scalar()
+    assert result == 33005
+
+
+def test_2015_submission_journal_count(connection):
+    era2015_journals = Table('era2015s_journal', metadata, autoload=True, autoload_with=connection)
+    query = select([func.count(era2015_journals.columns.eraid)])
+    result = connection.execute(query).scalar()
+    assert result == 16229
+
+
+def test_2015_submission_journal_issn_count(connection):
+    era2015_journal_issn = Table('era2015s_journal_issn', metadata, autoload=True, autoload_with=connection)
+    query = select([func.count(era2015_journal_issn.columns.issn)])
+    result = connection.execute(query).scalar()
+    assert result == 28947
+
+
+def test_2015_submission_journal_for_count(connection):
+    era2015_journal_for = Table('era2015s_journal_for', metadata, autoload=True, autoload_with=connection)
+    query = select([func.count(era2015_journal_for.columns.eraid)])
+    result = connection.execute(query).scalar()
+    assert result == 27820

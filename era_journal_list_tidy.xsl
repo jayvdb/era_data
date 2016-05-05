@@ -13,7 +13,7 @@
 
 <xsl:template match="item">
 	<rankedJournal>
-		<eraIdentifier><xsl:value-of select="ERAID"/></eraIdentifier>
+		<eraIdentifier><xsl:value-of select="ERAID | ERA_JOURNAL_ID"/></eraIdentifier>
 		<title><xsl:value-of select="Title"/></title>
 		<xsl:if test="Foreign_Title != ''">
 		<foreignTitle><xsl:value-of select="Foreign_Title"/></foreignTitle>
@@ -30,25 +30,25 @@
 			</xsl:if>
 		</fieldsOfResearch>
 		<issns>
-			<xsl:if test="ISSN_1 != ''">
+			<xsl:if test="ISSN_1 != '' and ISSN_1 != ' '">
 			<issn issnCode="{ISSN_1}"/>
 			</xsl:if>
-			<xsl:if test="ISSN_2 != ''">
+			<xsl:if test="ISSN_2 != '' and ISSN_2 != ' '">
 			<issn issnCode="{ISSN_2}"/>
 			</xsl:if>
-			<xsl:if test="ISSN_3 != ''">
+			<xsl:if test="ISSN_3 != '' and ISSN_3 != ' '">
 			<issn issnCode="{ISSN_3}"/>
 			</xsl:if>
-			<xsl:if test="ISSN_4 != ''">
+			<xsl:if test="ISSN_4 != '' and ISSN_4 != ' '">
 			<issn issnCode="{ISSN_4}"/>
 			</xsl:if>
-			<xsl:if test="ISSN_5 != ''">
+			<xsl:if test="ISSN_5 != '' and ISSN_5 != ' '">
 			<issn issnCode="{ISSN_5}"/>
 			</xsl:if>
-			<xsl:if test="ISSN_6 != ''">
+			<xsl:if test="ISSN_6 != '' and ISSN_6 != ' '">
 			<issn issnCode="{ISSN_6}"/>
 			</xsl:if>
-			<xsl:if test="ISSN_7 != ''">
+			<xsl:if test="ISSN_7 != '' and ISSN_7 != ' '">
 			<issn issnCode="{ISSN_7}"/>
 			</xsl:if>
 		</issns>
