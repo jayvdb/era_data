@@ -72,7 +72,7 @@ $WGET http://content.webarchive.nla.gov.au/gov/wayback/20140212052430/http://www
 # https://sbseminar.wordpress.com/2014/02/24/australian-research-council-journal-list/
 $WGET http://web.archive.org/web/20150921024910/http://tqft.net/math/ERA2015.csv
 
-$WGET http://www.arc.gov.au/sites/default/files/filedepot/Public/ERA/ERA%202015/ERA2015_Submitted_Journal_ListV2.xlsx
+$WGET http://web.archive.org/web/20160318210634/http://www.arc.gov.au/sites/default/files/filedepot/Public/ERA/ERA%202015/ERA2015_Submitted_Journal_ListV2.xlsx
 
 # Leave the downloads directory
 cd ..
@@ -108,6 +108,6 @@ cp downloads/ERA2012JournalList.xml $CACHE_DIR/ERA2012_journal_title_list.xml
 cp downloads/ERA2015JournalList_consultation.xml $CACHE_DIR/ERA2015_consultation_journal_title_list.xml
 cp downloads/ERA2015JournalList_submitted.xml $CACHE_DIR/ERA2015_submitted_journal_title_list.xml
 
-cp -f $CACHE_DIR/* .
+cp -f $CACHE_DIR/*.xml .
 
 "$BZIP2" $CACHE_DIR/*.xml
