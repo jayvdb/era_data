@@ -67,6 +67,8 @@ before_install:
       export ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe ;
       export ORACLE_SID=XE ;
       export PATH=$PATH:$ORACLE_HOME/bin ;
+      export LD_LIBRARY_PATH=$ORACLE_HOME/lib ;
+      export NLS_LANG=American_America.UTF8 ;
       wget 'https://github.com/cbandy/travis-oracle/archive/v2.0.0.tar.gz'; mkdir -p .travis/oracle ; tar xz --strip-components 1 -C .travis/oracle -f v2.0.0.tar.gz ;
       bash -x .travis/oracle/download.sh ;
       bash -x .travis/oracle/install.sh ;
@@ -79,8 +81,8 @@ before_script:
   - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2010_journal\2/g' schema.sql > schema2010.sql
   - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2012_journal\2/g' schema.sql > schema2012.sql
 
-  - if [ "$DB" = 'mysql' ]; then sed -ri 's/varchar2\((1?[0-9][0-9]?)\)/varchar(\1)/;s/varchar2\(([0-9]+)\)/text(\1)/' schema2010.sql schema2012.sql; fi
-  - if [ "$DB" = 'pgsql' ]; then sed -ri 's/varchar2\(([0-9]+)\)/varchar(\1)/' schema2010.sql schema2012.sql; fi
+  - if [ "$DB" = 'mysql' ]; then sed -ri 's/n?varchar2\((1?[0-9][0-9]?)\)/varchar(\1)/;s/n?varchar2\(([0-9]+)\)/text(\1)/' schema2010.sql schema2012.sql; fi
+  - if [ "$DB" = 'pgsql' ]; then sed -ri 's/n?varchar2\(([0-9]+)\)/varchar(\1)/' schema2010.sql schema2012.sql; fi
 
   - if [ "$DB" != 'sqlite3' -a "$DB" != 'oracle' ]; then echo 'create database era_data;' | $SQLCMD; fi
 
