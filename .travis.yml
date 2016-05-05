@@ -16,7 +16,7 @@ env:
 matrix:
   include:
     - env: DB=pgsql
-      python: 3.4
+      python: 2.7
       addons:
         apt:
           packages:
@@ -30,7 +30,7 @@ matrix:
       cache: false
 
     - env: DB=sqlite3
-      python: 2.6
+      python: 3.4
       virtualenv:
         system_site_packages: false
       addons:
@@ -90,7 +90,6 @@ before_install:
       export ORACLE_SID=XE ;
       export PATH=$PATH:$ORACLE_HOME/bin ;
       export LD_LIBRARY_PATH=$ORACLE_HOME/lib ;
-      export NLS_LANG=American_America.UTF8 ;
       wget 'https://github.com/cbandy/travis-oracle/archive/v2.0.0.tar.gz'; mkdir -p .travis/oracle ; tar xz --strip-components 1 -C .travis/oracle -f v2.0.0.tar.gz ;
       bash -x .travis/oracle/download.sh ;
       bash -x .travis/oracle/install.sh ;
