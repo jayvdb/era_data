@@ -13,7 +13,7 @@
 
 <xsl:template match="item">
 	<rankedJournal>
-		<eraIdentifier><xsl:value-of select="ERAID"/></eraIdentifier>
+		<eraIdentifier><xsl:value-of select="ERAID | ERA_JOURNAL_ID"/></eraIdentifier>
 		<title><xsl:value-of select="Title"/></title>
 		<xsl:if test="Foreign_Title != ''">
 		<foreignTitle><xsl:value-of select="Foreign_Title"/></foreignTitle>

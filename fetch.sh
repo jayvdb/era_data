@@ -33,7 +33,7 @@ fi
 
 CACHE_DIR=.cache/era_xml
 
-if [ -f $CACHE_DIR/ERA2010_journal_title_list.xml* -a -f $CACHE_DIR/ERA2012_journal_title_list.xml* ]; then
+if [ -f $CACHE_DIR/ERA2010_journal_title_list.xml* -a -f $CACHE_DIR/ERA2012_journal_title_list.xml* -a -f $CACHE_DIR/ERA2015_journal_title_list.xml* ]; then
   cp $CACHE_DIR/* .
   "$BUNZIP2" *.xml.bz2
   exit 0
@@ -68,6 +68,8 @@ $WGET http://content.webarchive.nla.gov.au/gov/wayback/20140212052430/http://www
 # unzip ../ERA2012JournalList.xlsx
 # cd ..
 
+$WGET http://www.arc.gov.au/sites/default/files/filedepot/Public/ERA/ERA%202015/ERA2015_Submitted_Journal_ListV2.xlsx
+
 # Leave the downloads directory
 cd ..
 
@@ -79,10 +81,19 @@ python -c "import json, dicttoxml; data = json.load(open('downloads/ERA2012Journ
 # Post-process the dicttoxml XML into the ERA 2010 journal list XML format
 lxmlproc --output downloads/ERA2012JournalList.xml  era_journal_list_tidy.xsl downloads/ERA2012JournalList.messy-xml
 
-# Copy both files into the output directory
+# Extract ERA 2015 journal list and convert it to XML
+python -c "import pyexcel, pyexcel.ext.xlsx; pyexcel.save_as(file_name='downloads/ERA2015_Submitted_Journal_ListV2.xlsx', dest_file_name='downloads/ERA2015JournalList.json', name_columns_by_row=0)"
+
+python -c "import json, dicttoxml; data = json.load(open('downloads/ERA2015JournalList.json')); f = open('downloads/ERA2015JournalList.messy-xml', 'wb'); f.write(dicttoxml.dicttoxml(data, attr_type=False, custom_root='JournalList')); f.close()"
+
+# Post-process the dicttoxml XML into the ERA 2010 journal list XML format
+lxmlproc --output downloads/ERA2015JournalList.xml  era_journal_list_tidy.xsl downloads/ERA2015JournalList.messy-xml
+
+# Copy xml files into the output directory
 mkdir -p $CACHE_DIR/
 cp downloads/ERA2010_tech_pack/code-table/XML-Format/ERA2010_journal_title_list.xml $CACHE_DIR
 cp downloads/ERA2012JournalList.xml $CACHE_DIR/ERA2012_journal_title_list.xml
+cp downloads/ERA2015JournalList.xml $CACHE_DIR/ERA2015_journal_title_list.xml
 
 cp $CACHE_DIR/* .
 
