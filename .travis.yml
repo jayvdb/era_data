@@ -75,7 +75,7 @@ before_script:
   # Create schema scripts with tables prefixed era201x
   - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2010_journal\2/g' schema.sql > schema2010.sql
   - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2012_journal\2/g' schema.sql > schema2012.sql
-  - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2015_journal\2/g' schema.sql > schema2012.sql
+  - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2015_journal\2/g' schema.sql > schema2015.sql
   - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2015c_journal\2/g' schema.sql > schema2015_consultation.sql
   - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2015s_journal\2/g' schema.sql > schema2015_submitted.sql
 
