@@ -1,14 +1,6 @@
 sudo: false
 language: python
 
-virtualenv:
-  system_site_packages: true
-
-addons:
-  apt:
-    packages:
-      - python-lxml
-
 env:
   global:
     - DBNAME=era_data
@@ -17,6 +9,8 @@ matrix:
   include:
     - env: DB=pgsql
       python: 2.7
+      virtualenv:
+        system_site_packages: true
       addons:
         apt:
           packages:
@@ -25,19 +19,17 @@ matrix:
 
     - env: DB=oracle
       language: python
-      python: 2.7
+      python: 3.4
       sudo: required
       cache: false
 
     - env: DB=sqlite3
       python: 3.4
-      virtualenv:
-        system_site_packages: false
-      addons:
-        apt: false
 
     - env: DB=mysql
       python: 2.7
+      virtualenv:
+        system_site_packages: true
       addons:
         apt:
           packages:
