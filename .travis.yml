@@ -75,17 +75,19 @@ before_script:
   # Create schema scripts with tables prefixed era201x
   - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2010_journal\2/g' schema.sql > schema2010.sql
   - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2012_journal\2/g' schema.sql > schema2012.sql
+  - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2015_journal\2/g' schema.sql > schema2012.sql
   - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2015c_journal\2/g' schema.sql > schema2015_consultation.sql
   - sed -re 's/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\1 era2015s_journal\2/g' schema.sql > schema2015_submitted.sql
 
-  - if [ "$DB" = 'mysql' ]; then sed -ri 's/n?varchar2\((1?[0-9][0-9]?)\)/varchar(\1)/;s/n?varchar2\(([0-9]+)\)/text(\1)/' schema2010.sql schema2012.sql schema2015_consultation.sql schema2015_submitted.sql ; fi
-  - if [ "$DB" = 'pgsql' ]; then sed -ri 's/n?varchar2\(([0-9]+)\)/varchar(\1)/' schema2010.sql schema2012.sql schema2015_consultation.sql schema2015_submitted.sql; fi
+  - if [ "$DB" = 'mysql' ]; then sed -ri 's/n?varchar2\((1?[0-9][0-9]?)\)/varchar(\1)/;s/n?varchar2\(([0-9]+)\)/text(\1)/' schema201*.sql ; fi
+  - if [ "$DB" = 'pgsql' ]; then sed -ri 's/n?varchar2\(([0-9]+)\)/varchar(\1)/' schema201*.sql ; fi
 
   - if [ "$DB" != 'sqlite3' -a "$DB" != 'oracle' ]; then echo 'create database era_data;' | $SQLCMD; fi
 
   # Populate database with both schema
   - $SQLCMD_QUIET $DBNAME < schema2010.sql
   - $SQLCMD_QUIET $DBNAME < schema2012.sql
+  - $SQLCMD_QUIET $DBNAME < schema2015.sql
   - $SQLCMD_QUIET $DBNAME < schema2015_consultation.sql
   - $SQLCMD_QUIET $DBNAME < schema2015_submitted.sql
 
@@ -101,6 +103,7 @@ script:
   # Convert the xml to sql insert statements
   - perl era_journal_list_sql.pl ERA2010_journal_title_list.xml era2010 $DB > ERA2010_journal_title_list.sql
   - perl era_journal_list_sql.pl ERA2012_journal_title_list.xml era2012 $DB > ERA2012_journal_title_list.sql
+  - perl era_journal_list_sql.pl ERA2015_journal_title_list.xml era2015 $DB > ERA2015_journal_title_list.sql
   - perl era_journal_list_sql.pl ERA2015_consultation_journal_title_list.xml era2015c $DB > ERA2015_consultation_journal_title_list.sql
   - perl era_journal_list_sql.pl ERA2015_submitted_journal_title_list.xml era2015s $DB > ERA2015_submitted_journal_title_list.sql
   - ls -l *.sql
@@ -108,6 +111,7 @@ script:
   # Insert the data into database
   - $SQLCMD_QUIET $DBNAME < ERA2010_journal_title_list.sql
   - $SQLCMD_QUIET $DBNAME < ERA2012_journal_title_list.sql
+  - $SQLCMD_QUIET $DBNAME < ERA2015_journal_title_list.sql
   - $SQLCMD_QUIET $DBNAME < ERA2015_consultation_journal_title_list.sql
   - $SQLCMD_QUIET $DBNAME < ERA2015_submitted_journal_title_list.sql
 
