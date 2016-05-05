@@ -17,6 +17,25 @@ matrix:
             - python-lxml
             - python-psycopg2  # python3-psycopg2 is also available
 
+    - env: DB=oracle
+      language: python
+      python: 3.4
+      sudo: required
+      cache: false
+
+    - env: DB=sqlite3
+      python: 3.4
+
+    - env: DB=mysql
+      python: 2.7
+      virtualenv:
+        system_site_packages: true
+      addons:
+        apt:
+          packages:
+            - python-lxml
+            - python-mysqldb  # No Python 3 support
+
 before_install:
   # 'sqlite3' and 'mysql' are the command name, and they are quiet by default
   - SQLCMD=$DB
