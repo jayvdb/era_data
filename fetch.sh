@@ -70,6 +70,7 @@ $WGET http://content.webarchive.nla.gov.au/gov/wayback/20140212052430/http://www
 
 # An online copy of the ERA 2015 journal list
 $WGET http://web.archive.org/web/20160505174054/https://www.acu.edu.au/__data/assets/excel_doc/0003/674283/ERA_2015_Submission_Journal_List.xlsx
+# https://web.archive.org/web/20160505180743/https://www.acu.edu.au/__data/assets/excel_doc/0004/674284/ERA_2015_Submission_Conference_List.xlsx
 
 # 2015 consultation journal list from http://jacci.arc.gov.au/, kindly provided by
 # https://sbseminar.wordpress.com/2014/02/24/australian-research-council-journal-list/

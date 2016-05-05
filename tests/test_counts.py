@@ -50,21 +50,21 @@ def test_2015_journal_count(connection):
     era2015_journals = Table('era2015_journal', metadata, autoload=True, autoload_with=connection)
     query = select([func.count(era2015_journals.columns.eraid)])
     result = connection.execute(query).scalar()
-    assert result == 22497
+    assert result == 24028
 
 
 def test_2015_journal_issn_count(connection):
     era2015_journal_issn = Table('era2015_journal_issn', metadata, autoload=True, autoload_with=connection)
     query = select([func.count(era2015_journal_issn.columns.issn)])
     result = connection.execute(query).scalar()
-    assert result == 36848
+    assert result == 39451
 
 
 def test_2015_journal_for_count(connection):
     era2015_journal_for = Table('era2015_journal_for', metadata, autoload=True, autoload_with=connection)
     query = select([func.count(era2015_journal_for.columns.eraid)])
     result = connection.execute(query).scalar()
-    assert result == 33005
+    assert result == 37522
 
 
 def test_2015_consultation_journal_count(connection):
