@@ -16,6 +16,7 @@ matrix:
           packages:
             - python-lxml
             - python-psycopg2  # python3-psycopg2 is also available
+            - python-sqlalchemy
 
     - env: DB=oracle
       language: python
@@ -24,7 +25,14 @@ matrix:
       cache: false
 
     - env: DB=sqlite3
-      python: 3.4
+      python: 2.7
+      virtualenv:
+        system_site_packages: true
+      addons:
+        apt:
+          packages:
+            - python-lxml
+            - python-sqlalchemy
 
     - env: DB=mysql
       python: 2.7
@@ -35,6 +43,7 @@ matrix:
           packages:
             - python-lxml
             - python-mysqldb  # No Python 3 support
+            - python-sqlalchemy
 
 before_install:
   # 'sqlite3' and 'mysql' are the command name, and they are quiet by default
@@ -87,6 +96,9 @@ before_install:
       bash -x .travis/oracle/download.sh ;
       bash -x .travis/oracle/install.sh ;
     fi
+
+  # cx_Oracle workaround https://bitbucket.org/zzzeek/sqlalchemy/issues/3705
+  - if [ "$DB" = 'oracle' ]; then  pip install git+https://github.com/jayvdb/sqlalchemy@oracle-passwordless ; fi
 
   - export SQLCMD; export SQLCMD_QUIET
 

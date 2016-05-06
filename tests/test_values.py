@@ -19,9 +19,9 @@ def test_2010_southerly(connection):
     assert result == [('0038-3732', )]
 
     era2010_journal_for = Table('era2010_journal_for', metadata, autoload=True, autoload_with=connection)
-    query = select([era2010_journal_for.columns.discipline]).where(era2010_journal_for.columns.eraid == 11637)
+    query = select([era2010_journal_for.columns.discipline]).where(era2010_journal_for.columns.eraid == 11637).order_by(era2010_journal_for.columns.discipline)
     result = connection.execute(query).fetchall()
-    assert sorted(result) == [('190000', ), ('200000', ), ('210000', )]
+    assert result == [('190000', ), ('200000', ), ('210000', )]
 
 
 def test_2012_southerly(connection):
@@ -36,9 +36,9 @@ def test_2012_southerly(connection):
     assert result == [('0038-3732', )]
 
     era2012_journal_for = Table('era2012_journal_for', metadata, autoload=True, autoload_with=connection)
-    query = select([era2012_journal_for.columns.discipline]).where(era2012_journal_for.columns.eraid == 11637)
+    query = select([era2012_journal_for.columns.discipline]).where(era2012_journal_for.columns.eraid == 11637).order_by(era2012_journal_for.columns.discipline)
     result = connection.execute(query).fetchall()
-    assert sorted(result) == [('190000', ), ('200000', ), ('210000', )]
+    assert result == [('190000', ), ('200000', ), ('210000', )]
 
 
 def test_2015_southerly(connection):
@@ -53,9 +53,9 @@ def test_2015_southerly(connection):
     assert result == [('0038-3732', )]
 
     era2015_journal_for = Table('era2015_journal_for', metadata, autoload=True, autoload_with=connection)
-    query = select([era2015_journal_for.columns.discipline]).where(era2015_journal_for.columns.eraid == 11637)
+    query = select([era2015_journal_for.columns.discipline]).where(era2015_journal_for.columns.eraid == 11637).order_by(era2015_journal_for.columns.discipline)
     result = connection.execute(query).fetchall()
-    assert sorted(result) == [('190000', ), ('200000', ), ('210000', )]
+    assert result == [('190000', ), ('200000', ), ('210000', )]
 
 
 def test_2015_consultation_southerly(connection):
@@ -70,9 +70,9 @@ def test_2015_consultation_southerly(connection):
     assert result == [('0038-3732', )]
 
     era2015_journal_for = Table('era2015c_journal_for', metadata, autoload=True, autoload_with=connection)
-    query = select([era2015_journal_for.columns.discipline]).where(era2015_journal_for.columns.eraid == 11637)
+    query = select([era2015_journal_for.columns.discipline]).where(era2015_journal_for.columns.eraid == 11637).order_by(era2015_journal_for.columns.discipline)
     result = connection.execute(query).fetchall()
-    assert sorted(result) == [('190000', ), ('200000', ), ('210000', )]
+    assert result == [('190000', ), ('200000', ), ('210000', )]
 
 
 def test_2015_submitted_southerly(connection):
@@ -87,9 +87,9 @@ def test_2015_submitted_southerly(connection):
     assert result == [('0038-3732', )]
 
     era2015_journal_for = Table('era2015s_journal_for', metadata, autoload=True, autoload_with=connection)
-    query = select([era2015_journal_for.columns.discipline]).where(era2015_journal_for.columns.eraid == 11637)
+    query = select([era2015_journal_for.columns.discipline]).where(era2015_journal_for.columns.eraid == 11637).order_by(era2015_journal_for.columns.discipline)
     result = connection.execute(query).fetchall()
-    assert sorted(result) == [('190000', ), ('200000', ), ('210000', )]
+    assert result == [('190000', ), ('200000', ), ('210000', )]
 
 
 def test_2012_unicode(connection):
