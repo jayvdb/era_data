@@ -7,4 +7,4 @@ dicttoxml
 lxml  # need for lxmlproc; see https://github.com/nicferrier/lxmlproc/pull/1
 lxmlproc
 
-git+https://github.com/jayvdb/pytest-sqlalchemy@travis
+git+https://github.com/toirl/pytest-sqlalchemy

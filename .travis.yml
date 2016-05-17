@@ -98,7 +98,7 @@ before_install:
     fi
 
   # cx_Oracle workaround https://bitbucket.org/zzzeek/sqlalchemy/issues/3705
-  - if [ "$DB" = 'oracle' ]; then  pip install git+https://github.com/jayvdb/sqlalchemy@oracle-passwordless ; fi
+  - if [ "$DB" = 'oracle' ]; then  pip install "sqlalchemy>=1.0.13" ; fi
 
   - export SQLCMD; export SQLCMD_QUIET
 
