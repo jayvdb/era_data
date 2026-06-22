@@ -1,4 +1,4 @@
-pyexcel>=0.2.1
+pyexcel>=0.7.5
 pyexcel-xlsx
 pyexcel-text>=0.2.0
 
