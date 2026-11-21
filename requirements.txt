@@ -1,5 +1,5 @@
 pyexcel==0.2.5
-pyexcel-io==0.2.5
+pyexcel-io==0.6.8
 pyexcel-xlsx==0.2.3
 pyexcel-text==0.2.3
 
