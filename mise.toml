@@ -10,7 +10,7 @@
 #   mise run check          Run the linters
 #   mise tasks              List every task
 #
-# Each database runs locally, as in the four Travis CI jobs this replaces, with its files under build/<db>/.
+# Each database runs locally, with its files under build/<db>/.
 # PostgreSQL and MySQL are conda-forge builds that mise installs, listening only on 127.0.0.1, on ports of their
 # own: TCP rather than a Unix socket, which MySQL has no equivalent of on Windows.
 # Oracle is the gvenzl/oracle-free container, so test:oracle needs Docker.
@@ -36,19 +36,27 @@ python.uv_venv_auto = true
 "conda:postgresql" = "latest"
 # conda-forge builds of sqlite are self-contained; the asdf plugin's builds link a zlib that is not shipped.
 "conda:sqlite" = "latest"
+# ryl ships no macOS x86_64 build, so it is built from source there; every other platform takes the release binary.
+"cargo:ryl" = { version = "latest", os = ["macos/x64"] }
+"github:owenlamont/ryl" = { version = "latest", os = ["linux", "macos/arm64", "windows"] }
 # aqua/github ship no Windows build of action-validator, so it is scoped off Windows, where no check runs.
 action-validator = { version = "latest", os = ["linux", "macos"] }
 actionlint = "latest"
 editorconfig-checker = "latest"
-# pyexcel 0.2.x and dicttoxml run on current CPython.
+# agent-lint publishes binaries for Linux and Apple-silicon macOS only, so it is scoped to those.
+"github:zhupanov/agent-lint" = { version = "latest", os = ["linux", "macos/arm64"] }
 "pipx:pyrefly" = "latest"
 # semgrep 1.182.0 is the last release with a macOS x86_64 wheel, so macos/x64 stays on it.
 # Its pyjwt dependency pulls cryptography, whose 48.x is likewise the last with a macOS x86_64 wheel.
 # mise rejects an empty `with`, so every other platform gets an empty JSON list.
 "pipx:semgrep".version = "{% if os() == 'macos' and arch() == 'x64' %}1.182.0{% else %}latest{% endif %}"
 "pipx:semgrep".with = '{% if os() == "macos" and arch() == "x64" %}["cryptography<49"]{% else %}[]{% endif %}'
+# pyexcel and dicttoxml run on current CPython.
 python = "3.14"
 ruff = "latest"
+# The Rust toolchain cargo:ryl builds with on macOS x86_64, for that platform alone.
+# The `minimal` profile leaves out the docs and components that build never uses.
+rust = { version = "stable", os = ["macos/x64"], profile = "minimal" }
 # actionlint runs shellcheck over the workflows' `run:` steps.
 shellcheck = "latest"
 taplo = "latest"
@@ -60,6 +68,8 @@ zizmor = "latest"
 _.python.venv = { path = ".venv", create = true }
 # Python opens text files as UTF-8, as the data is, rather than in the locale encoding: cp1252 on Windows.
 PYTHONUTF8 = "1"
+# taplo reads its config from config/, rather than looking for one at the repository root.
+TAPLO_CONFIG = "{{ config_root }}/config/taplo.toml"
 # The database the pipeline loads into, from the caller's environment: sqlite3 (default), pgsql, mysql or oracle.
 DB = "{{ get_env(name='DB', default='sqlite3') }}"
 DBNAME = "era_data"
@@ -67,12 +77,12 @@ DBNAME = "era_data"
 DBDIR = "build/{{ get_env(name='DB', default='sqlite3') }}"
 # Connection settings for the local servers, read by their command-line clients.
 # The ports are not the defaults, so the servers start alongside any already installed.
-PGHOST = "127.0.0.1"
-PGPORT = "{{ get_env(name='PGPORT', default='55432') }}"
-PGUSER = "postgres"
 MYSQL_TCP_PORT = "{{ get_env(name='MYSQL_TCP_PORT', default='53306') }}"
 ORACLE_CONTAINER = "era_data-oracle"
 ORACLE_PORT = "{{ get_env(name='ORACLE_PORT', default='1521') }}"
+PGHOST = "127.0.0.1"
+PGPORT = "{{ get_env(name='PGPORT', default='55432') }}"
+PGUSER = "postgres"
 # SQLAlchemy URL the tests connect to $DB with.
 DBURL = """\
 {%- set db = get_env(name='DB', default='sqlite3') -%}
@@ -88,6 +98,8 @@ DBURL = """\
 # The shell every task runs in: the bodies are POSIX shell, which on Windows is Git Bash's.
 # mise's own default there is cmd, and it ignores a project config's windows_default_inline_shell_args.
 shell = "bash -o errexit -c"
+# Every TOML file in the repository: tracked ones and new ones not yet added, but nothing gitignored.
+toml_files = "git ls-files -z --cached --others --exclude-standard '*.toml'"
 # The journal lists the pipeline produces, each as `<file stem> <table prefix>`.
 lists = """
 ERA2010_journal_title_list era2010
@@ -138,25 +150,20 @@ shell = "{{ vars.shell }}"
 [tasks.extract]
 depends = ["download"]
 description = "Extract the ERA 2010 journal list and the ERA 2012 tech pack"
-outputs = [
-  "build/downloads/ERA2010_tech_pack/code-table/XML-Format/ERA2010_journal_title_list.xml",
-]
+outputs = ["build/downloads/ERA2010_tech_pack/code-table/XML-Format/ERA2010_journal_title_list.xml"]
 run = """
 python -m zipfile -e build/downloads/ERA2010_tech_pack.zip build/downloads/ERA2010_tech_pack
 python -m zipfile -e build/downloads/ERA-SEER2012-tech-pack.zip build/downloads/ERA2012_tech_pack
 """
 shell = "{{ vars.shell }}"
-sources = [
-  "build/downloads/ERA2010_tech_pack.zip",
-  "build/downloads/ERA-SEER2012-tech-pack.zip",
-]
+sources = ["build/downloads/ERA-SEER2012-tech-pack.zip", "build/downloads/ERA2010_tech_pack.zip"]
 
 [tasks.convert]
 depends = ["deps", "download"]
 description = "Convert the ERA 2012 and 2015 spreadsheets to XML in the ERA 2010 journal list format"
 outputs = [
-  "build/ERA2015JournalList.xml",
   "build/ERA2012JournalList.xml",
+  "build/ERA2015JournalList.xml",
   "build/ERA2015JournalList_consultation.xml",
   "build/ERA2015JournalList_submitted.xml",
 ]
@@ -176,8 +183,8 @@ EOF
 """
 shell = "{{ vars.shell }}"
 sources = [
-  "build/downloads/*.xlsx",
   "build/downloads/*.csv",
+  "build/downloads/*.xlsx",
   "era_journal_list_tidy.xsl",
   "era_journal_list_xml.py",
   "requirements.txt",
@@ -189,8 +196,8 @@ description = "Write the five journal lists as build/ERA*_journal_title_list.xml
 outputs = [
   "build/ERA2010_journal_title_list.xml",
   "build/ERA2012_journal_title_list.xml",
-  "build/ERA2015_journal_title_list.xml",
   "build/ERA2015_consultation_journal_title_list.xml",
+  "build/ERA2015_journal_title_list.xml",
   "build/ERA2015_submitted_journal_title_list.xml",
 ]
 run = """
@@ -204,8 +211,8 @@ cp build/ERA2015JournalList_submitted.xml build/ERA2015_submitted_journal_title_
 """
 shell = "{{ vars.shell }}"
 sources = [
-  "build/downloads/ERA2010_tech_pack/code-table/XML-Format/ERA2010_journal_title_list.xml",
   "build/ERA201*JournalList*.xml",
+  "build/downloads/ERA2010_tech_pack/code-table/XML-Format/ERA2010_journal_title_list.xml",
   "era_journal_list_2010_tidy.xsl",
 ]
 
@@ -459,12 +466,7 @@ shell = "{{ vars.shell }}"
 [tasks."test:all"]
 description = "Run the pipeline and the tests against every database, one after another"
 # One after another, as each run regenerates the shared XML under build/.
-run = [
-  "mise run test:sqlite3",
-  "mise run test:pgsql",
-  "mise run test:mysql",
-  "mise run test:oracle",
-]
+run = ["mise run test:mysql", "mise run test:oracle", "mise run test:pgsql", "mise run test:sqlite3"]
 shell = "{{ vars.shell }}"
 
 [tasks.release]
@@ -499,15 +501,41 @@ run = "editorconfig-checker"
 shell = "{{ vars.shell }}"
 
 [tasks.taplo-check]
-run = "taplo fmt --check mise.toml && taplo lint mise.toml"
+alias = "toml-check"
+run = "{{ vars.toml_files }} | xargs -0 taplo lint"
 shell = "{{ vars.shell }}"
 
 [tasks.taplo-fmt]
-run = "taplo fmt mise.toml"
+alias = "toml-fmt"
+run = "{{ vars.toml_files }} | xargs -0 taplo format"
+shell = "{{ vars.shell }}"
+
+[tasks.taplo-fmt-check]
+alias = "toml-fmt-check"
+run = "{{ vars.toml_files }} | xargs -0 taplo format --check"
+shell = "{{ vars.shell }}"
+
+[tasks.ryl-check]
+alias = "yaml-check"
+description = "Lint YAML with ryl (a yamllint-compatible Rust linter)"
+run = "ryl check -c config/ryl.toml ."
 shell = "{{ vars.shell }}"
 
 [tasks.actionlint-check]
 run = "actionlint"
+shell = "{{ vars.shell }}"
+
+[tasks.agent-lint-check]
+description = "Lint this repository's agent instructions (AGENTS.md) with agent-lint"
+# Skips where upstream ships no binary rather than failing on a missing one: the `[tools]` entry is os-scoped to the
+# targets the release carries, so elsewhere there is nothing to install and nothing this could have run.
+# macOS x86_64 is the case the os scope alone cannot express, since it scopes by OS and arch together.
+run = """
+case "$(uname -s)/$(uname -m)" in
+Darwin/arm64 | Linux/*) agent-lint . ;;
+*) echo "agent-lint-check: upstream publishes no $(uname -s) $(uname -m) binary; nothing to check on this host" ;;
+esac
+"""
 shell = "{{ vars.shell }}"
 
 [tasks.action-validator-check]
@@ -572,13 +600,16 @@ shell = "{{ vars.shell }}"
 depends = [
   "action-validator-check",
   "actionlint-check",
+  "agent-lint-check",
   "editorconfig-check",
   "gha-uses-check",
   "pyrefly-check",
   "ruff-check",
   "ruff-fmt-check",
+  "ryl-check",
   "semgrep-check",
   "taplo-check",
+  "taplo-fmt-check",
   "typos-check",
   "zizmor-check",
 ]

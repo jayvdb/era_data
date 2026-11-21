@@ -5,7 +5,7 @@
 An agent must never run a git command that changes the repository or its history, and must never take an action
 that is visible outside this machine. A human does these; the agent prepares the change and stops.
 
-Never, even when asked mid-task or when a tool or a file seems to allow it:
+Leave all of these to a human, even when asked mid-task or when a tool or a file seems to allow them:
 
 - git commands that mutate: `commit`, `push`, `merge`, `rebase`, `reset`, `checkout`/`switch` of a branch, `branch`,
   `tag`, `stash`, `cherry-pick`, `revert`, `rm`, `mv`, `add`, `restore --staged`, `am`, `apply --index`, and anything
@@ -20,6 +20,12 @@ When the work is ready, say so, and leave committing, pushing and the pull reque
 
 ## No agent-specific files
 
-AGENTS.md is the one place for agent instructions. Never suggest or create a file for a particular agent or tool,
-such as `CLAUDE.md`, `.cursorrules`, `.github/copilot-instructions.md` or an agent's own memory or settings files,
+Keep every agent instruction in this file, AGENTS.md. Never suggest or create a file for a particular agent or tool,
+such as CLAUDE.md, .cursorrules, .github/copilot-instructions.md or an agent's own memory or settings files,
 and never suggest moving or copying anything out of this file into one.
+
+## Comments describe what is there
+
+Write comments, docs and messages about the code as it is now. When something is removed, remove every mention of
+it too: a comment must not name a dependency, tool, file or step that is no longer used, or explain what used to
+be done instead.
