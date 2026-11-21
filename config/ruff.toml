@@ -1,0 +1,66 @@
+# ruff config, applied via the mise ruff-* tasks, which pass it with --config.
+# Editors and pre-commit look for ruff config only at the repo root, so point them here to get the same rules.
+#
+# Match the editorconfig line length. Without this, ruff would use its default of 88, so files
+# that ruff considered "already formatted" could still sit over the limit.
+line-length = 120
+
+# The Python mise.toml installs.
+target-version = "py314"
+
+[format]
+# Force LF so formatting is deterministic across platforms.
+# ruff's default (`auto`) writes platform line endings, so a format run on Windows would rewrite every file as CRLF.
+line-ending = "lf"
+
+[lint]
+# On top of the default rule set (E, F). Codes are kept alphabetically sorted.
+#   "ARG" -- flake8-unused-arguments: unused function/method/lambda arguments.
+#   "B" -- flake8-bugbear: likely bugs (mutable defaults, `zip` without `strict=`, loop-variable shadowing, ...).
+#   "BLE001" -- broad catches can hide programming errors; narrow operational failures or report/re-raise them.
+#   "C4" -- flake8-comprehensions: unnecessary or unpythonic comprehensions and generator calls.
+#   "C901" -- mccabe: a function whose cyclomatic complexity passes [lint.mccabe]'s ceiling.
+#   "D" -- pydocstyle (PEP 257) docstring checks; see [lint.pydocstyle].
+#   "INP" -- flake8-no-pep420: a `.py` file in a directory without `__init__.py`.
+#   "I" -- isort import sorting. `ruff format` only handles whitespace; the "I" rules give deterministic grouping.
+#   "N" -- pep8-naming: class / function / constant / exception naming conventions.
+#   "PIE" -- flake8-pie: unnecessary or duplicated constructs (redundant passes, dict literals, ...).
+#   "PLC" / "PLE" / "PLW" -- pylint conventions / errors / warnings. PLR (its refactor, complexity, and
+#   magic-value rules) is deliberately left out as too subjective.
+#   "PLR6301" -- the one PLR rule taken: a method that never uses `self`.
+#   "RUF" -- ruff-native checks (unsorted `__all__`, unused `noqa`, ...).
+#   "SIM" -- flake8-simplify: simplifiable conditionals, `return`s, and context managers.
+#   "UP" -- pyupgrade: modern syntax for the project's minimum Python.
+extend-select = [
+  "ARG",
+  "B",
+  "BLE001",
+  "C4",
+  "C901",
+  "D",
+  "I",
+  "INP",
+  "N",
+  "PIE",
+  "PLC",
+  "PLE",
+  "PLR6301",
+  "PLW",
+  "RUF",
+  "SIM",
+  "UP",
+]
+# Preview is on only so PLR6301 can be selected; `explicit-preview-rules` keeps every other preview rule off.
+explicit-preview-rules = true
+preview = true
+
+[lint.mccabe]
+max-complexity = 15
+
+[lint.pydocstyle]
+convention = "pep257"
+
+[lint.per-file-ignores]
+# Test modules: docstrings on test functions are noise, not API surface.
+# pytest collects tests/ as rootdir-relative modules, so it is not a package.
+"tests/**" = ["D", "INP001"]

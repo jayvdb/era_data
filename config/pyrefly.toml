@@ -1,0 +1,32 @@
+# Pyrefly config for the Python type checker run by `mise run pyrefly-check`.
+# Paths are relative to this file (config/), so repo-root files are reached via `../`. Pyrefly catches undefined
+# names and wrong argument/return types.
+
+project-includes = ["../*.py", "../tests/**/*.py"]
+
+# The Python the code is checked against, rather than whichever interpreter the host's PATH yields first.
+# Must equal the mise `python` pin.
+python-version = "3.14"
+
+# Resolve imports from `search-path` alone, never from an interpreter's site-packages.
+# The .venv a workstation has would resolve imports that a fresh CI runner, which has no .venv, cannot.
+skip-interpreter-query = true
+
+# The scripts are top-level modules at the repo root.
+search-path = [".."]
+
+# Third-party deps that are absent from the lint environment.
+# `replace-imports-with-any` (rather than a blanket ignore) keeps import resolution deterministic on every OS.
+replace-imports-with-any = ["dicttoxml", "pyexcel", "sqlalchemy", "sqlalchemy.*"]
+
+# Pin an empty container literal to its declared type, never to the type its first use suggests.
+# Without this, `items = []` followed by `items.append(1)` is inferred as `list[int]` and never reported, so
+# `implicit-any-empty-container` below would have nothing to fire on.
+infer-with-first-use = false
+
+# Error kinds raised above their default severity.
+# `implicitly-defined-attribute` -- an attribute first assigned outside `__init__` and undeclared in the class body.
+# `implicit-any-empty-container` -- an empty `[]`, `{}` or `set()` whose element type nothing declares.
+[errors]
+implicit-any-empty-container = true
+implicitly-defined-attribute = true

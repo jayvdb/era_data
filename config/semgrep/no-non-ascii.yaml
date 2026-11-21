@@ -1,0 +1,12 @@
+rules:
+  - id: no-non-ascii
+    languages: [generic]
+    pattern-regex: '[^\x00-\x7F]'
+    message: >-
+      Non-ASCII character.
+      Keep source, config, docs and generated output ASCII-only: use `--` for an em-dash, `->` for an arrow, `...`
+      for an ellipsis, `<=`/`!=`/`^2` for math glyphs, and straight quotes for curly quotes. ASCII keeps terminals,
+      log scrapers, and `grep` reading the same bytes the editor shows. Nothing is exempt: when a generator emits
+      the character, fix the generator or the task that runs it. Test data that has to hold one spells it as an
+      escape, such as `\u00f6`.
+    severity: ERROR

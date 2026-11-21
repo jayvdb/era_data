@@ -1,0 +1,28 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_size = 2
+indent_style = space
+max_line_length = 120
+trim_trailing_whitespace = true
+
+[*.py]
+indent_size = 4
+
+[*.sql]
+indent_size = unset
+indent_style = tab
+
+[era_journal_list_tidy.xsl]
+indent_size = unset
+indent_style = tab
+
+[era_journal_list_2010_tidy.xsl]
+indent_size = 4
+
+# Markdown list continuation lines use whatever indentation the list marker needs.
+[*.md]
+indent_size = unset

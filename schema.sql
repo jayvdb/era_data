@@ -11,7 +11,7 @@ CREATE TABLE journal (
 
 CREATE TABLE journal_for (
 	eraid integer not null,
-	-- a era discipline is only four sigificant figures, however we will link it to
+	-- a era discipline is only four significant figures, however we will link it to
 	-- CR table 'classification_code' which has all six digits, so we will record it
 	-- here with six for easy linkage
 	discipline char(6) not null check (SUBSTR(discipline,5,2) = '00'),
