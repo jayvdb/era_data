@@ -68,6 +68,17 @@ The servers keep running after the tests, for looking at the data; `mise run db:
 
 `mise tasks` lists every step, and `mise run check` runs the linters.
 
+## Releases
+
+Each release has `era_data.sqlite.gz`, a single SQLite database holding every journal list above,
+in the tables `era2010_journal`, `era2012_journal`, `era2015_journal`, `era2015c_journal` (consultation)
+and `era2015s_journal` (submitted), each with its `_issn` and `_for` (field of research) tables.
+It is the data this pipeline produces, tested, not the original files, and `era_data.sqlite.gz.sha256`
+holds its checksum.
+
+`mise run release` builds the same file into `build/release/`. Pushing a tag such as `v2026.11.0` runs the
+release workflow, which builds it afresh and attaches it to that tag's release.
+
 ## Contributing
 
 Feel free to submit pull requests for additional transforms or analysis.

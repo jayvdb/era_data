@@ -274,7 +274,18 @@ mysql)
     mkdir -p "$DBDIR"
     mysqld "$@" --initialize-insecure
   fi
-  if ! mysqladmin -h 127.0.0.1 -P "$MYSQL_TCP_PORT" -u root ping >/dev/null 2>&1; then
+  # Whether the MySQL server on port $1 is this project's, the one keeping its data in build/mysql/data.
+  ours() {
+    dir=$(mysql -h 127.0.0.1 -P "$1" -u root -N -B -e 'SELECT @@datadir' 2>/dev/null) || return 1
+    [ "$(cd "$dir" 2>/dev/null && pwd -P)" = "$(cd build/mysql/data 2>/dev/null && pwd -P)" ]
+  }
+  # A server already answering is reused only when it is this project's; db:create would drop its database.
+  if mysqladmin -h 127.0.0.1 -P "$MYSQL_TCP_PORT" -u root ping >/dev/null 2>&1; then
+    if ! ours "$MYSQL_TCP_PORT"; then
+      echo "Another MySQL server is listening on 127.0.0.1:$MYSQL_TCP_PORT; set MYSQL_TCP_PORT to a free port" >&2
+      exit 1
+    fi
+  else
     # Windows has no --daemonize, so mysqld goes in the background everywhere, and the task waits for it.
     nohup mysqld "$@" --bind-address=127.0.0.1 --port="$MYSQL_TCP_PORT" --mysqlx=OFF \\
       --socket="$(native "$PWD/$DBDIR/mysql.sock")" --pid-file="$(native "$PWD/$DBDIR/mysqld.pid")" >/dev/null 2>&1 &
@@ -323,9 +334,15 @@ run = """
 if [ -d build/pgsql/data ] && pg_ctl status -D build/pgsql/data >/dev/null; then
   pg_ctl stop -D build/pgsql/data -m fast
 fi
+# Whether the MySQL server on port $1 is this project's, the one keeping its data in build/mysql/data.
+ours() {
+  dir=$(mysql -h 127.0.0.1 -P "$1" -u root -N -B -e 'SELECT @@datadir' 2>/dev/null) || return 1
+  [ "$(cd "$dir" 2>/dev/null && pwd -P)" = "$(cd build/mysql/data 2>/dev/null && pwd -P)" ]
+}
 # The port the server was started on, which db:start records, rather than whatever MYSQL_TCP_PORT is now.
+# Only this project's server is shut down; another one answering on that port is left alone.
 port=$(cat build/mysql/port 2>/dev/null || echo "$MYSQL_TCP_PORT")
-if [ -d build/mysql/data ] && mysqladmin -h 127.0.0.1 -P "$port" -u root ping >/dev/null 2>&1; then
+if [ -d build/mysql/data ] && ours "$port"; then
   mysqladmin -h 127.0.0.1 -P "$port" -u root shutdown
   # mysqladmin returns once shutdown begins; mysqld removes its pid file when it has exited, so clean waits for that.
   tries=0
@@ -441,6 +458,26 @@ run = [
   "mise run test:mysql",
   "mise run test:oracle",
 ]
+shell = "{{ vars.shell }}"
+
+[tasks.release]
+depends = ["test:sqlite3"]
+description = "Write build/release/era_data.sqlite.gz, every journal list in one SQLite database, and its checksum"
+# The release is the data this pipeline produces, in one tested file that any language can read.
+# None of the government's original files go in it.
+# VACUUM INTO writes a compacted copy, and gzip -n leaves out the name and time, so the same data gives the same file.
+run = """
+rm -rf build/release
+mkdir -p build/release
+sqlite3 build/sqlite3/era_data.sqlite "VACUUM INTO 'build/release/era_data.sqlite'"
+gzip -9 -n build/release/era_data.sqlite
+cd build/release
+if command -v sha256sum >/dev/null; then
+  sha256sum era_data.sqlite.gz >era_data.sqlite.gz.sha256
+else
+  shasum -a 256 era_data.sqlite.gz >era_data.sqlite.gz.sha256
+fi
+"""
 shell = "{{ vars.shell }}"
 
 [tasks.clean]

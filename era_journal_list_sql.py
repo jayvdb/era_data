@@ -18,6 +18,8 @@ RANK = re.compile(r"<journalRank>([^<]+)<")  # 2010 only
 ISSN = re.compile(r'<issn issnCode="(.+)"/>')
 DISCIPLINE = re.compile(r'<fieldOfResearch forCode="([0-9]+)" ')
 MULTIDISCIPLINARY = re.compile(r'<fieldOfResearch forCode="MD" ')
+# A title or foreign title whose text runs on past the end of the line: a spreadsheet cell holding a line break.
+SPLIT_TITLE = re.compile(r"<(?:title|foreignTitle)>[^<]*$")
 # The references XML text and attribute values can hold: the five predefined entities and character references.
 ENTITY = re.compile(r"&(?:#x([0-9a-fA-F]+)|#([0-9]+)|(amp|lt|gt|quot|apos));")
 NAMED_ENTITIES = {"amp": "&", "lt": "<", "gt": ">", "quot": '"', "apos": "'"}
@@ -130,12 +132,34 @@ class Writer:
             self.write(f"update {p}journal set foreign_title = '{foreign_title}' where eraid = {eraid};")
 
 
+def join_split_titles(lines):
+    """Yield the lines, with a title or foreign title that spans several joined onto one.
+
+    Each line break in the title becomes a space, as era_journal_list_2010_tidy.xsl does for the ERA 2010 list,
+    so the title matches on a single line rather than being lost.
+    """
+    pending = None
+    for line in lines:
+        text = line.rstrip("\r\n")
+        if pending is not None:
+            pending += " " + text
+            if "<" in text:
+                yield pending + "\n"
+                pending = None
+        elif SPLIT_TITLE.search(text):
+            pending = text
+        else:
+            yield line
+    if pending is not None:
+        yield pending + "\n"
+
+
 def convert(lines, writer):
     """Write the SQL for the journal list XML read line by line from lines."""
     writer.set_verbose("off")
     journal: Journal | None = None
     count = 0
-    for line in lines:
+    for line in join_split_titles(lines):
         if match := ERAID.search(line):
             if journal:
                 writer.journal(journal)
