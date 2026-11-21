@@ -22,13 +22,16 @@ jobs:
         with:
           persist-credentials: false
 
-      # Installs mise and every tool in mise.toml.
+      # Installs mise and only the tools `mise run release` uses: Python, uv and SQLite.
+      # This job can write to the repository and publishes the data file, so nothing else in mise.toml, the linters
+      # especially, is installed onto its PATH, where a tampered release of one could shadow a command the build runs.
       # GITHUB_TOKEN raises the api.github.com rate limit that mise's version lookups draw on.
       # No cache: a release is built from tools fetched afresh, never from a cache another run could have poisoned.
       - uses: jdx/mise-action@v5
         with:
           github_token: ${{ github.token }}
           cache: false
+          install_args: python uv conda:sqlite
 
       # Downloads the sources afresh, runs the whole pipeline and its tests against SQLite, and writes the bundle.
       - name: Build the data file
