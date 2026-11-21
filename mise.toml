@@ -54,6 +54,9 @@ editorconfig-checker = "latest"
 # pyexcel and dicttoxml run on current CPython.
 python = "3.14"
 ruff = "latest"
+# The Rust toolchain cargo:ryl builds with on macOS x86_64, for that platform alone.
+# The `minimal` profile leaves out the docs and components that build never uses.
+rust = { version = "stable", os = ["macos/x64"], profile = "minimal" }
 # actionlint runs shellcheck over the workflows' `run:` steps.
 shellcheck = "latest"
 taplo = "latest"
