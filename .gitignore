@@ -1,3 +1,5 @@
+build/
+.venv/
 downloads/
 .cache/
 ERA201*_journal_title_list.*

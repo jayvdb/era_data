@@ -1,6 +1,7 @@
-pyexcel>=0.2.1
-pyexcel-xlsx
-pyexcel-text>=0.2.0
+pyexcel==0.2.5
+pyexcel-io==0.2.5
+pyexcel-xlsx==0.2.3
+pyexcel-text==0.2.3
 
 dicttoxml
 
@@ -8,3 +9,8 @@ lxml  # need for lxmlproc; see https://github.com/nicferrier/lxmlproc/pull/1
 lxmlproc
 
 git+https://github.com/toirl/pytest-sqlalchemy
+
+# Database drivers for the tests: PostgreSQL, MySQL and Oracle (thin mode, so no Oracle client libraries).
+psycopg[binary]
+pymysql
+oracledb

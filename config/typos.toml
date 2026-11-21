@@ -1,0 +1,7 @@
+# typos spell-check config, applied via `mise run typos-check`.
+
+[default]
+# Each pattern suppresses one known false positive, anchored so the word is still checked everywhere else.
+# `FoR_1` .. `FoR_3` are the ERA spreadsheets' "Field of Research" column names, which era_journal_list_tidy.xsl
+# reads; typos splits them into "Fo" + "R". Scoped to those column names so a bare "Fo" is still flagged.
+extend-ignore-re = ["FoR_[0-9]"]

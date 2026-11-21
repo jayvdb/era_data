@@ -1,0 +1,2 @@
+# Check out with LF line endings everywhere, Windows included, as .editorconfig asks.
+* text=auto eol=lf

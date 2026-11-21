@@ -1,0 +1,57 @@
+name: Test
+
+on:
+  pull_request: {}
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+# Git Bash on Windows: the mise tasks run in bash, and this puts Git's ahead of WSL's on the PATH.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: ${{ matrix.db }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    # The four databases the Travis CI build covered, on each OS.
+    # test:oracle runs Oracle Database Free in Docker, which only the Linux runners can run Linux containers in.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        db: [sqlite3, pgsql, mysql, oracle]
+        exclude:
+          - os: macos-latest
+            db: oracle
+          - os: windows-latest
+            db: oracle
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # The download task fetches fixed Internet Archive snapshots, so a cached copy never goes stale.
+      # Bump the key when that task gains a file, or the restored cache will never save it.
+      - name: Cache the downloads
+        uses: actions/cache@v6
+        with:
+          path: build/downloads
+          key: era-downloads-v1
+
+      # Installs mise and every tool in mise.toml.
+      # GITHUB_TOKEN raises the api.github.com rate limit that mise's version lookups draw on.
+      - uses: jdx/mise-action@v5
+        with:
+          github_token: ${{ github.token }}
+
+      - name: Run the pipeline and the tests
+        env:
+          DB: ${{ matrix.db }}
+        run: mise run "test:$DB"

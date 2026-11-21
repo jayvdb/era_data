@@ -1,0 +1,541 @@
+# mise config: the tools and tasks that fetch the ERA journal lists, convert them to XML and SQL, load them into a
+# database and test the result.
+# Everything it downloads goes to build/downloads/, and everything it generates to build/.
+#
+#   mise install            Install the tools below
+#   mise run                Run the whole pipeline against SQLite (the default task, `test`)
+#   mise run test:pgsql     The same against PostgreSQL; also test:sqlite3, test:mysql and test:oracle
+#   mise run test:all       The same against all four databases, one after another
+#   mise run db:stop        Stop the database servers the tasks started
+#   mise run check          Run the linters
+#   mise tasks              List every task
+#
+# Each database runs locally, as in the four Travis CI jobs this replaces, with its files under build/<db>/.
+# PostgreSQL and MySQL are conda-forge builds that mise installs, listening only on 127.0.0.1, on ports of their
+# own: TCP rather than a Unix socket, which MySQL has no equivalent of on Windows.
+# Oracle is the gvenzl/oracle-free container, so test:oracle needs Docker.
+
+min_version = "2026.10.15"
+
+[settings]
+experimental = true
+# Fail fast on a missing tool rather than installing it on the fly.
+exec_auto_install = false
+task.run_auto_install = false
+# Ignore .python-version and friends; versions are declared here.
+idiomatic_version_file_enable_tools = []
+# Hide tool releases younger than a week, so a broken or malicious release is usually pulled before it resolves.
+minimum_release_age = "7d"
+# Have uv create the .venv below.
+python.uv_venv_auto = true
+
+[tools]
+# The conda:mysql metapackage puts no commands on PATH: mise exposes only a package's own executables.
+"conda:mysql-client" = "latest"
+"conda:mysql-server" = "latest"
+"conda:postgresql" = "latest"
+# conda-forge builds of sqlite are self-contained; the asdf plugin's builds link a zlib that is not shipped.
+"conda:sqlite" = "latest"
+# aqua/github ship no Windows build of action-validator, so it is scoped off Windows, where no check runs.
+action-validator = { version = "latest", os = ["linux", "macos"] }
+actionlint = "latest"
+editorconfig-checker = "latest"
+# pyexcel 0.2.x and dicttoxml run on current CPython.
+"pipx:pyrefly" = "latest"
+# semgrep 1.182.0 is the last release with a macOS x86_64 wheel, so macos/x64 stays on it.
+# Its pyjwt dependency pulls cryptography, whose 48.x is likewise the last with a macOS x86_64 wheel.
+# mise rejects an empty `with`, so every other platform gets an empty JSON list.
+"pipx:semgrep".version = "{% if os() == 'macos' and arch() == 'x64' %}1.182.0{% else %}latest{% endif %}"
+"pipx:semgrep".with = '{% if os() == "macos" and arch() == "x64" %}["cryptography<49"]{% else %}[]{% endif %}'
+python = "3.14"
+ruff = "latest"
+# actionlint runs shellcheck over the workflows' `run:` steps.
+shellcheck = "latest"
+taplo = "latest"
+typos = "latest"
+uv = "latest"
+zizmor = "latest"
+
+[env]
+_.python.venv = { path = ".venv", create = true }
+# Python opens text files as UTF-8, as the data is, rather than in the locale encoding: cp1252 on Windows.
+PYTHONUTF8 = "1"
+# The database the pipeline loads into, from the caller's environment: sqlite3 (default), pgsql, mysql or oracle.
+DB = "{{ get_env(name='DB', default='sqlite3') }}"
+DBNAME = "era_data"
+# Where the SQL for $DB is written, and where its server keeps its files.
+DBDIR = "build/{{ get_env(name='DB', default='sqlite3') }}"
+# Connection settings for the local servers, read by their command-line clients.
+# The ports are not the defaults, so the servers start alongside any already installed.
+PGHOST = "127.0.0.1"
+PGPORT = "{{ get_env(name='PGPORT', default='55432') }}"
+PGUSER = "postgres"
+MYSQL_TCP_PORT = "{{ get_env(name='MYSQL_TCP_PORT', default='53306') }}"
+ORACLE_CONTAINER = "era_data-oracle"
+ORACLE_PORT = "{{ get_env(name='ORACLE_PORT', default='1521') }}"
+# SQLAlchemy URL the tests connect to $DB with.
+DBURL = """\
+{%- set db = get_env(name='DB', default='sqlite3') -%}
+{%- if db == 'pgsql' %}postgresql+psycopg://postgres@127.0.0.1:\
+{{ get_env(name='PGPORT', default='55432') }}/era_data
+{%- elif db == 'mysql' %}mysql+pymysql://root@127.0.0.1:\
+{{ get_env(name='MYSQL_TCP_PORT', default='53306') }}/era_data?charset=utf8mb4
+{%- elif db == 'oracle' %}oracle+oracledb://era_data:era_data@localhost:\
+{{ get_env(name='ORACLE_PORT', default='1521') }}/?service_name=FREEPDB1
+{%- else %}sqlite:///build/sqlite3/era_data.sqlite{% endif -%}"""
+
+[vars]
+# The shell every task runs in: the bodies are POSIX shell, which on Windows is Git Bash's.
+# mise's own default there is cmd, and it ignores a project config's windows_default_inline_shell_args.
+shell = "bash -o errexit -c"
+# The journal lists the pipeline produces, each as `<file stem> <table prefix>`.
+lists = """
+ERA2010_journal_title_list era2010
+ERA2012_journal_title_list era2012
+ERA2015_journal_title_list era2015
+ERA2015_consultation_journal_title_list era2015c
+ERA2015_submitted_journal_title_list era2015s
+"""
+
+[tasks.deps]
+description = "Install the Python packages into .venv"
+run = "uv pip install -r requirements.txt"
+shell = "{{ vars.shell }}"
+
+[tasks.download]
+description = "Download the tech packs and journal lists from the Internet Archive into build/downloads/"
+run = """
+mkdir -p build/downloads
+wayback=https://web.archive.org/web
+arc=www.arc.gov.au
+acu=www.acu.edu.au/__data/assets/excel_doc
+arc_era=$arc/sites/default/files/filedepot/Public/ERA
+while read -r url; do
+  [ -n "$url" ] || continue
+  file="build/downloads/${url##*/}"
+  if [ ! -s "$file" ]; then
+    curl -fsSL --retry 5 --retry-all-errors -o "$file.part" "$url"
+    mv "$file.part" "$file"
+  fi
+done <<EOF
+$wayback/20150328231353/http://$arc/zip/ERA2010_tech_pack.zip
+$wayback/20140212022156/http://$arc//zip/ERA-SEER2012-tech-pack.zip
+$wayback/20140212022205/http://$arc/xls/era12/ERA2012JournalList.xlsx
+$wayback/20160505174054/https://$acu/0003/674283/ERA_2015_Submission_Journal_List.xlsx
+$wayback/20150921024910/https://tqft.net/math/ERA2015.csv
+$wayback/20160318210634/https://$arc_era/ERA%202015/ERA2015_Submitted_Journal_ListV2.xlsx
+EOF
+"""
+shell = "{{ vars.shell }}"
+# The URLs above:
+# - The 2012 tech pack has no journal list in it, but is kept for reference.
+#   ERA2012JournalList.xlsx is the ERA 2012 journal list, published on its own.
+# - ERA_2015_Submission_Journal_List.xlsx is an online copy of the ERA 2015 journal list.
+#   Its conference list, ERA_2015_Submission_Conference_List.xlsx, is beside it under 0004/674284/, at 20160505180743.
+# - ERA2015.csv is the 2015 consultation journal list from http://jacci.arc.gov.au/, kindly provided by
+#   https://sbseminar.wordpress.com/2014/02/24/australian-research-council-journal-list/
+
+[tasks.extract]
+depends = ["download"]
+description = "Extract the ERA 2010 journal list and the ERA 2012 tech pack"
+outputs = [
+  "build/downloads/ERA2010_tech_pack/code-table/XML-Format/ERA2010_journal_title_list.xml",
+]
+run = """
+python -m zipfile -e build/downloads/ERA2010_tech_pack.zip build/downloads/ERA2010_tech_pack
+python -m zipfile -e build/downloads/ERA-SEER2012-tech-pack.zip build/downloads/ERA2012_tech_pack
+"""
+shell = "{{ vars.shell }}"
+sources = [
+  "build/downloads/ERA2010_tech_pack.zip",
+  "build/downloads/ERA-SEER2012-tech-pack.zip",
+]
+
+[tasks.convert]
+depends = ["deps", "download"]
+description = "Convert the ERA 2012 and 2015 spreadsheets to XML in the ERA 2010 journal list format"
+outputs = [
+  "build/ERA2015JournalList.xml",
+  "build/ERA2012JournalList.xml",
+  "build/ERA2015JournalList_consultation.xml",
+  "build/ERA2015JournalList_submitted.xml",
+]
+# Each spreadsheet goes to generic XML with era_journal_list_xml.py, and era_journal_list_tidy.xsl turns that into
+# the ERA 2010 layout.
+run = """
+while read -r src out; do
+  [ -n "$src" ] || continue
+  python era_journal_list_xml.py "build/downloads/$src" "build/$out"
+  lxmlproc --output "build/$out.xml" era_journal_list_tidy.xsl "build/$out.messy-xml"
+done <<'EOF'
+ERA_2015_Submission_Journal_List.xlsx ERA2015JournalList
+ERA2012JournalList.xlsx ERA2012JournalList
+ERA2015.csv ERA2015JournalList_consultation
+ERA2015_Submitted_Journal_ListV2.xlsx ERA2015JournalList_submitted
+EOF
+"""
+shell = "{{ vars.shell }}"
+sources = [
+  "build/downloads/*.xlsx",
+  "build/downloads/*.csv",
+  "era_journal_list_tidy.xsl",
+  "era_journal_list_xml.py",
+  "requirements.txt",
+]
+
+[tasks.xml]
+depends = ["convert", "extract"]
+description = "Write the five journal lists as build/ERA*_journal_title_list.xml, removing duplicate disciplines"
+outputs = [
+  "build/ERA2010_journal_title_list.xml",
+  "build/ERA2012_journal_title_list.xml",
+  "build/ERA2015_journal_title_list.xml",
+  "build/ERA2015_consultation_journal_title_list.xml",
+  "build/ERA2015_submitted_journal_title_list.xml",
+]
+run = """
+lxmlproc --output build/ERA2010_journal_title_list.xml era_journal_list_2010_tidy.xsl \\
+  build/downloads/ERA2010_tech_pack/code-table/XML-Format/ERA2010_journal_title_list.xml
+lxmlproc --output build/ERA2015_journal_title_list.xml era_journal_list_2010_tidy.xsl \\
+  build/ERA2015JournalList.xml
+cp build/ERA2012JournalList.xml build/ERA2012_journal_title_list.xml
+cp build/ERA2015JournalList_consultation.xml build/ERA2015_consultation_journal_title_list.xml
+cp build/ERA2015JournalList_submitted.xml build/ERA2015_submitted_journal_title_list.xml
+"""
+shell = "{{ vars.shell }}"
+sources = [
+  "build/downloads/ERA2010_tech_pack/code-table/XML-Format/ERA2010_journal_title_list.xml",
+  "build/ERA201*JournalList*.xml",
+  "era_journal_list_2010_tidy.xsl",
+]
+
+[tasks.schema]
+description = "Write a $DBDIR/schema<year>.sql per journal list, with the tables prefixed and types adjusted for $DB"
+# MySQL 8 reserves RANK, so the rank column is quoted there.
+run = """
+mkdir -p "$DBDIR"
+while read -r stem prefix; do
+  [ -n "$stem" ] || continue
+  out="$DBDIR/schema${stem#ERA}"
+  out="${out%_journal_title_list}.sql"
+  sed -E "s/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\\1 ${prefix}_journal\\2/g" schema.sql |
+    case "$DB" in
+    mysql)
+      sed -E 's/n?varchar2\\((1?[0-9][0-9]?)\\)/varchar(\\1)/;s/n?varchar2\\(([0-9]+)\\)/text(\\1)/' |
+        sed -E 's/([^_a-z])rank([^_a-z])/\\1`rank`\\2/g'
+      ;;
+    pgsql) sed -E 's/n?varchar2\\(([0-9]+)\\)/varchar(\\1)/' ;;
+    *) cat ;;
+    esac >"$out"
+done <<'EOF'
+{{ vars.lists }}
+EOF
+"""
+shell = "{{ vars.shell }}"
+
+[tasks.sql]
+depends = ["deps", "xml"]
+description = "Convert each journal list to SQL insert statements for $DB"
+run = """
+mkdir -p "$DBDIR"
+while read -r stem prefix; do
+  [ -n "$stem" ] || continue
+  python era_journal_list_sql.py "build/$stem.xml" "$prefix" "$DB" >"$DBDIR/$stem.sql"
+done <<'EOF'
+{{ vars.lists }}
+EOF
+"""
+shell = "{{ vars.shell }}"
+
+[tasks."db:start"]
+description = "Start the $DB server, creating it on first use"
+run = """
+case "$DB" in
+sqlite3) ;;
+pgsql)
+  if [ ! -f "$DBDIR/data/PG_VERSION" ]; then
+    mkdir -p "$DBDIR"
+    initdb -D "$DBDIR/data" -U postgres --auth=trust -E UTF8 --locale=C >"$DBDIR/initdb.log"
+    { echo "listen_addresses = '127.0.0.1'"; echo "unix_socket_directories = ''"; } >>"$DBDIR/data/postgresql.conf"
+  fi
+  if ! pg_ctl status -D "$DBDIR/data" >/dev/null; then
+    pg_ctl start -w -D "$DBDIR/data" -l "$DBDIR/server.log" -o "-p $PGPORT"
+  fi
+  ;;
+mysql)
+  # mysqld needs absolute paths, which on Windows must be native ones, not Git Bash's /c/... form.
+  native() { if command -v cygpath >/dev/null; then cygpath -m "$1"; else printf '%s\\n' "$1"; fi; }
+  # mise runs mysqld through a wrapper script, so it cannot find its own plugins without being told where they are.
+  # conda keeps them in lib/plugin, or Library/lib/plugin on Windows.
+  plugin=$(find "$(mise where conda:mysql-server)" -name 'component_reference_cache.*' | head -n 1)
+  set -- --no-defaults --datadir="$(native "$PWD/$DBDIR/data")" --log-error="$(native "$PWD/$DBDIR/server.log")" \\
+    --plugin-dir="$(native "$(dirname "$plugin")")"
+  if [ ! -d "$DBDIR/data" ]; then
+    mkdir -p "$DBDIR"
+    mysqld "$@" --initialize-insecure
+  fi
+  if ! mysqladmin -h 127.0.0.1 -P "$MYSQL_TCP_PORT" -u root ping >/dev/null 2>&1; then
+    # Windows has no --daemonize, so mysqld goes in the background everywhere, and the task waits for it.
+    nohup mysqld "$@" --bind-address=127.0.0.1 --port="$MYSQL_TCP_PORT" --mysqlx=OFF \\
+      --socket="$(native "$PWD/$DBDIR/mysql.sock")" --pid-file="$(native "$PWD/$DBDIR/mysqld.pid")" >/dev/null 2>&1 &
+    tries=0
+    until mysqladmin -h 127.0.0.1 -P "$MYSQL_TCP_PORT" -u root ping >/dev/null 2>&1; do
+      tries=$((tries + 1))
+      if [ "$tries" -gt 60 ]; then
+        cat "$DBDIR/server.log" >&2
+        exit 1
+      fi
+      sleep 1
+    done
+    # db:stop reads the port back, so it stops this server even when MYSQL_TCP_PORT has changed since.
+    echo "$MYSQL_TCP_PORT" >"$DBDIR/port"
+  fi
+  ;;
+oracle)
+  if docker container inspect "$ORACLE_CONTAINER" >/dev/null 2>&1; then
+    docker start "$ORACLE_CONTAINER" >/dev/null
+  else
+    docker run -d --name "$ORACLE_CONTAINER" -p "127.0.0.1:$ORACLE_PORT:1521" -e ORACLE_RANDOM_PASSWORD=yes \\
+      -e APP_USER=era_data -e APP_USER_PASSWORD=era_data gvenzl/oracle-free:23-slim-faststart >/dev/null
+  fi
+  tries=0
+  until docker exec "$ORACLE_CONTAINER" healthcheck.sh >/dev/null 2>&1; do
+    tries=$((tries + 1))
+    if [ "$tries" -gt 60 ]; then
+      docker logs "$ORACLE_CONTAINER" >&2
+      exit 1
+    fi
+    sleep 5
+  done
+  ;;
+*)
+  echo "Unsupported DB=$DB; use sqlite3, pgsql, mysql or oracle" >&2
+  exit 1
+  ;;
+esac
+"""
+shell = "{{ vars.shell }}"
+
+[tasks."db:stop"]
+description = "Stop every database server the tasks started"
+run = """
+# pg_ctl status rather than the pid file, which a crash or a reboot leaves behind with no server.
+if [ -d build/pgsql/data ] && pg_ctl status -D build/pgsql/data >/dev/null; then
+  pg_ctl stop -D build/pgsql/data -m fast
+fi
+# The port the server was started on, which db:start records, rather than whatever MYSQL_TCP_PORT is now.
+port=$(cat build/mysql/port 2>/dev/null || echo "$MYSQL_TCP_PORT")
+if [ -d build/mysql/data ] && mysqladmin -h 127.0.0.1 -P "$port" -u root ping >/dev/null 2>&1; then
+  mysqladmin -h 127.0.0.1 -P "$port" -u root shutdown
+  # mysqladmin returns once shutdown begins; mysqld removes its pid file when it has exited, so clean waits for that.
+  tries=0
+  while [ -f build/mysql/mysqld.pid ]; do
+    tries=$((tries + 1))
+    if [ "$tries" -gt 60 ]; then
+      echo "mysqld has not exited after 60s" >&2
+      exit 1
+    fi
+    sleep 1
+  done
+fi
+if command -v docker >/dev/null && docker container inspect "$ORACLE_CONTAINER" >/dev/null 2>&1; then
+  docker rm -f "$ORACLE_CONTAINER" >/dev/null
+fi
+"""
+shell = "{{ vars.shell }}"
+
+[tasks."db:create"]
+depends = ["db:start"]
+description = "Create an empty $DB database named era_data, dropping any existing one"
+# The container's era_data user owns the Oracle tables, so emptying its schema stands in for a new database.
+run = """
+case "$DB" in
+sqlite3) mkdir -p "$DBDIR" && rm -f "$DBDIR/$DBNAME.sqlite" ;;
+pgsql) dropdb --if-exists "$DBNAME" && createdb "$DBNAME" ;;
+mysql)
+  mysql -h 127.0.0.1 -P "$MYSQL_TCP_PORT" -u root \\
+    -e "DROP DATABASE IF EXISTS $DBNAME; CREATE DATABASE $DBNAME CHARACTER SET utf8mb4;"
+  ;;
+oracle)
+  docker exec -i "$ORACLE_CONTAINER" sqlplus -s -l era_data/era_data@FREEPDB1 <<'EOF'
+WHENEVER SQLERROR EXIT FAILURE
+BEGIN
+  FOR t IN (SELECT table_name FROM user_tables) LOOP
+    EXECUTE IMMEDIATE 'DROP TABLE "' || t.table_name || '" CASCADE CONSTRAINTS PURGE';
+  END LOOP;
+END;
+/
+EXIT
+EOF
+  ;;
+esac
+"""
+shell = "{{ vars.shell }}"
+
+[tasks."db:load"]
+depends = ["db:create", "schema", "sql"]
+description = "Create the tables and load the journal lists into the $DB database"
+run = """
+# Runs a SQL script with the selected database's command-line client, as one transaction.
+# The data scripts are one INSERT per row, and committing each row on its own takes hours.
+sqlcmd() {
+  case "$DB" in
+  sqlite3) { echo 'BEGIN;'; cat "$1"; echo 'COMMIT;'; } | sqlite3 -bail "$DBDIR/$DBNAME.sqlite" ;;
+  pgsql) psql -q -1 -v ON_ERROR_STOP=1 -f "$1" "$DBNAME" ;;
+  mysql)
+    { echo 'SET autocommit=0;'; cat "$1"; echo 'COMMIT;'; } |
+      mysql -h 127.0.0.1 -P "$MYSQL_TCP_PORT" -u root --default-character-set=utf8mb4 "$DBNAME"
+    ;;
+  oracle)
+    # cursor_sharing turns each INSERT's literals into binds, so Oracle parses the statement once rather than per row,
+    # which loads about seven times faster.
+    { echo 'WHENEVER SQLERROR EXIT FAILURE'; echo 'ALTER SESSION SET cursor_sharing = FORCE;'; cat "$1"
+      echo 'COMMIT;'; echo 'EXIT'; } |
+      docker exec -i "$ORACLE_CONTAINER" sqlplus -s -l era_data/era_data@FREEPDB1
+    ;;
+  esac
+}
+for f in "$DBDIR"/schema201*.sql "$DBDIR"/ERA201*_journal_title_list.sql; do sqlcmd "$f"; done
+"""
+shell = "{{ vars.shell }}"
+
+[tasks.test]
+alias = "default"
+depends = ["db:load", "deps"]
+description = "Test the loaded $DB database with pytest"
+run = 'pytest -o cache_dir=build/.pytest_cache --sqlalchemy-connect-url="$DBURL"'
+shell = "{{ vars.shell }}"
+
+# One task per database, each running the whole pipeline with DB set for it.
+# A nested `mise run` rather than `depends`, because a task's env does not reach the tasks it depends on.
+[tasks."test:sqlite3"]
+description = "Run the pipeline and the tests against SQLite"
+env = { DB = "sqlite3" }
+run = "mise run test"
+shell = "{{ vars.shell }}"
+
+[tasks."test:pgsql"]
+description = "Run the pipeline and the tests against a local PostgreSQL server"
+env = { DB = "pgsql" }
+run = "mise run test"
+shell = "{{ vars.shell }}"
+
+[tasks."test:mysql"]
+description = "Run the pipeline and the tests against a local MySQL server"
+env = { DB = "mysql" }
+run = "mise run test"
+shell = "{{ vars.shell }}"
+
+[tasks."test:oracle"]
+description = "Run the pipeline and the tests against Oracle Database Free in Docker"
+env = { DB = "oracle" }
+run = "mise run test"
+shell = "{{ vars.shell }}"
+
+[tasks."test:all"]
+description = "Run the pipeline and the tests against every database, one after another"
+# One after another, as each run regenerates the shared XML under build/.
+run = [
+  "mise run test:sqlite3",
+  "mise run test:pgsql",
+  "mise run test:mysql",
+  "mise run test:oracle",
+]
+shell = "{{ vars.shell }}"
+
+[tasks.clean]
+depends = ["db:stop"]
+description = "Stop the database servers and remove everything under build/ but build/downloads/"
+run = "find build -mindepth 1 -maxdepth 1 ! -name downloads -exec rm -rf {} +"
+shell = "{{ vars.shell }}"
+
+[tasks.editorconfig-check]
+alias = "ec"
+run = "editorconfig-checker"
+shell = "{{ vars.shell }}"
+
+[tasks.taplo-check]
+run = "taplo fmt --check mise.toml && taplo lint mise.toml"
+shell = "{{ vars.shell }}"
+
+[tasks.taplo-fmt]
+run = "taplo fmt mise.toml"
+shell = "{{ vars.shell }}"
+
+[tasks.actionlint-check]
+run = "actionlint"
+shell = "{{ vars.shell }}"
+
+[tasks.action-validator-check]
+description = "Validate the GitHub Actions workflows against their schema"
+run = "action-validator .github/workflows/*.yml"
+shell = "{{ vars.shell }}"
+
+[tasks.zizmor-check]
+description = "Audit the GitHub Actions workflows for security issues (zizmor)"
+# --offline so it needs no GH token and stays deterministic.
+# config/zizmor.yaml turns off the hash-pin policy (we pin actions by tag, not commit).
+run = "zizmor --offline --no-progress -c config/zizmor.yaml .github/workflows"
+shell = "{{ vars.shell }}"
+
+[tasks.gha-uses-check]
+description = "Reject GitHub Actions pinned by commit hash rather than by tag"
+# zizmor can require a hash pin but has no policy that forbids one, so this is the other half of config/zizmor.yaml.
+run = """
+if grep -nE '^[[:space:]-]*uses:[[:space:]]*[^[:space:]#]+@[0-9a-f]{40}' .github/workflows/*.yml; then
+  echo 'Pin these actions by tag (`@v4`), not by commit hash; Dependabot keeps the tags current.' >&2
+  exit 1
+fi
+"""
+shell = "{{ vars.shell }}"
+
+[tasks.pyrefly-check]
+run = "pyrefly check -c config/pyrefly.toml"
+shell = "{{ vars.shell }}"
+
+[tasks.semgrep-check]
+description = "Run the Semgrep rules in config/semgrep (ASCII-only text)"
+run = "semgrep scan --config config/semgrep --error --metrics=off ."
+shell = "{{ vars.shell }}"
+
+[tasks.typos-check]
+alias = "typos"
+run = "typos --config config/typos.toml"
+shell = "{{ vars.shell }}"
+
+[tasks.typos-fix]
+description = "Auto-correct typos detected by the typos linter"
+run = "typos --config config/typos.toml --write-changes"
+shell = "{{ vars.shell }}"
+
+[tasks.ruff-check]
+run = "ruff check --config config/ruff.toml"
+shell = "{{ vars.shell }}"
+
+[tasks.ruff-fmt-check]
+run = "ruff format --check --config config/ruff.toml"
+shell = "{{ vars.shell }}"
+
+[tasks.ruff-fix]
+run = "ruff check --fix --config config/ruff.toml"
+shell = "{{ vars.shell }}"
+
+[tasks.ruff-fmt]
+run = "ruff format --config config/ruff.toml"
+shell = "{{ vars.shell }}"
+
+[tasks.check]
+depends = [
+  "action-validator-check",
+  "actionlint-check",
+  "editorconfig-check",
+  "gha-uses-check",
+  "pyrefly-check",
+  "ruff-check",
+  "ruff-fmt-check",
+  "semgrep-check",
+  "taplo-check",
+  "typos-check",
+  "zizmor-check",
+]
+description = "Run all linters"
