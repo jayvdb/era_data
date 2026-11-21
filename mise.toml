@@ -259,7 +259,14 @@ pgsql)
     { echo "listen_addresses = '127.0.0.1'"; echo "unix_socket_directories = ''"; } >>"$DBDIR/data/postgresql.conf"
   fi
   if ! pg_ctl status -D "$DBDIR/data" >/dev/null; then
-    pg_ctl start -w -D "$DBDIR/data" -l "$DBDIR/server.log" -o "-p $PGPORT"
+    # On Windows the server inherits pg_ctl's stdout and stderr, which are the pipe mise reads this task from.
+    # The server holds it open, so mise waits on it for as long as the server runs, and the job times out.
+    # Pointing pg_ctl's own streams at a file instead leaves the server nothing of mise's to hold.
+    if ! pg_ctl start -w -D "$DBDIR/data" -l "$DBDIR/server.log" -o "-p $PGPORT" \\
+      </dev/null >"$DBDIR/pg_ctl.log" 2>&1; then
+      cat "$DBDIR/pg_ctl.log" "$DBDIR/server.log" >&2
+      exit 1
+    fi
   fi
   ;;
 mysql)
