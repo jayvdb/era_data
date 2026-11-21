@@ -1,0 +1,9 @@
+# taplo TOML formatter and linter config; mise.toml's TAPLO_CONFIG points taplo here.
+# Build output and the virtualenv are off-limits. Both are gitignored, but taplo's own file discovery does not honour
+# .gitignore; the mise tasks pass it `git ls-files` instead.
+exclude = [".venv/**", "build/**"]
+
+[formatting]
+column_width = 120
+reorder_arrays = true
+reorder_keys = true

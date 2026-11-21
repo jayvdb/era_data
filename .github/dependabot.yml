@@ -7,6 +7,13 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      # pyexcel, pyexcel-io and pyexcel-xlsx only work with each other's matching versions.
+      # Upgraded one at a time, each pull request fails, so they are always upgraded together in one.
+      pyexcel:
+        patterns:
+          - "pyexcel"
+          - "pyexcel-*"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

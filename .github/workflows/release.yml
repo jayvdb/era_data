@@ -1,7 +1,7 @@
 name: Release
 
 # A person releases by pushing a tag such as v2026.11.0; nothing here creates a tag or a release on its own.
-on:
+"on":
   push:
     tags:
       - "v*"

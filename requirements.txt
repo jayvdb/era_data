@@ -1,7 +1,8 @@
-pyexcel==0.2.5
-pyexcel-io==0.2.5
-pyexcel-xlsx==0.2.3
-pyexcel-text==0.2.3
+# The pyexcel packages are released in step and only work with each other's matching versions,
+# so they are pinned and upgraded together; .github/dependabot.yml groups them into one pull request.
+pyexcel==0.7.6
+pyexcel-io==0.6.8
+pyexcel-xlsx==0.6.1
 
 dicttoxml
 

@@ -1,0 +1,81 @@
+# ryl YAML linter config, applied via `mise run ryl-check`.
+# Starts from yamllint's standard ruleset, every rule of it stated.
+# Then aligns the cosmetic rules with the repo's other tools so they never disagree, and pins each rule's strictest
+# setting the repo already meets so a regression fails rather than passing under a looser default.
+
+[files]
+markdown = ["*.md"]
+yaml = ["*.yaml", "*.yml", ".yamllint"]
+
+[lint]
+strict = true
+
+[lint.rules]
+brackets = "enable"
+colons = "enable"
+commas = "enable"
+document-end = "disable"
+# The repo's workflows and configs don't use a `---` document-start marker.
+document-start = "disable"
+hyphens = "enable"
+# Keys are ordered by meaning (`name`, then `runs-on`, then `steps`), not alphabetically.
+key-ordering = "disable"
+new-line-at-end-of-file = "enable"
+# Quoting is left to the author: a regex in a rule file is single-quoted so its backslashes need no doubling.
+quoted-strings = "disable"
+trailing-spaces = "enable"
+
+[lint.rules.anchors]
+forbid-ambiguous-anchor-alias-names = true
+forbid-duplicated-anchors = true
+forbid-undeclared-aliases = true
+forbid-unused-anchors = true
+
+# An empty `{}` is the one flow mapping kept, for a value that must be present but has nothing to set.
+[lint.rules.braces]
+forbid = "non-empty"
+
+# A misindented comment reads as attached to the wrong block, so treat it as an error, not a warning.
+[lint.rules.comments-indentation]
+level = "error"
+
+[lint.rules.empty-lines]
+max = 1
+max-end = 0
+max-start = 0
+
+[lint.rules.empty-values]
+forbid-in-block-mappings = true
+forbid-in-block-sequences = true
+forbid-in-flow-mappings = true
+
+[lint.rules.float-values]
+forbid-inf = true
+forbid-nan = true
+forbid-scientific-notation = true
+require-numeral-before-decimal = true
+
+[lint.rules.indentation]
+indent-sequences = true
+spaces = 2
+
+[lint.rules.key-duplicates]
+forbid-duplicated-merge-keys = true
+
+# Match the editorconfig line length (yamllint defaults to 80).
+[lint.rules.line-length]
+allow-non-breakable-words = false
+max = 120
+
+[lint.rules.new-lines]
+type = "unix"
+
+[lint.rules.octal-values]
+forbid-explicit-octal = true
+forbid-implicit-octal = true
+
+[lint.rules.truthy]
+level = "error"
+
+[format]
+quote-style = "preserve"

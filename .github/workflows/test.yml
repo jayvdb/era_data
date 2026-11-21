@@ -1,6 +1,6 @@
 name: Test
 
-on:
+"on":
   pull_request: {}
   push:
     branches:
@@ -20,7 +20,7 @@ jobs:
     name: ${{ matrix.db }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
-    # The four databases the Travis CI build covered, on each OS.
+    # The four databases, on each OS.
     # test:oracle runs Oracle Database Free in Docker, which only the Linux runners can run Linux containers in.
     strategy:
       fail-fast: false
