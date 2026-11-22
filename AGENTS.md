@@ -24,6 +24,21 @@ Keep every agent instruction in this file, AGENTS.md. Never suggest or create a 
 such as CLAUDE.md, .cursorrules, .github/copilot-instructions.md or an agent's own memory or settings files,
 and never suggest moving or copying anything out of this file into one.
 
+## Write ASCII, and never join lines with a trailing backslash
+
+Both are banned repo-wide by the rules in config/semgrep, which `mise run check` runs: write `--` for an em-dash,
+`->` for an arrow and straight quotes for curly ones. When a logical line would exceed the 120-character limit, pick
+a split that needs no trailing `\`:
+
+- **mise task `run` bodies**: factor values into shell variables, build up a command's arguments with
+  `set -- "$@" ...`, or split it into several statements.
+- **mise values built with Tera**: compute the parts with `{%- set ... -%}` tags, whose `-` trims the line breaks.
+- **mise task descriptions**: keep them to one line.
+- **YAML run bodies**: a `|` block scalar already keeps each shell line whole; use shell variables there too.
+- **Python**: wrap in parentheses.
+
+If a split honestly isn't possible without `\`, stop and raise the constraint rather than adding one.
+
 ## Comments describe what is there
 
 Write comments, docs and messages about the code as it is now. When something is removed, remove every mention of

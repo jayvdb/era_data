@@ -1,9 +1,10 @@
 name: Release
 
-# A person releases by pushing a tag such as v2026.11.0; nothing here creates a tag or a release on its own.
+# A person releases by pushing a tag such as data-v3; nothing here creates a tag or a release on its own.
 "on":
   push:
     tags:
+      - "data-v*"
       - "v*"
 
 permissions:
@@ -37,14 +38,25 @@ jobs:
       - name: Build the data file
         run: mise run release
 
+      # A data-v* release is the one the python/ and rust/ packages download, so its file must be the one they pin.
+      # `mise run pin` pins them; this fails the release rather than publish a file the packages would reject.
+      - name: Check the packages pin this file
+        if: startsWith(github.ref_name, 'data-v')
+        env:
+          TAG: ${{ github.ref_name }}
+        run: python pin.py --check "$TAG" build/release/era_data.nt.gz
+
       # The tag's release is created if it does not exist yet, and the files replace any of the same name.
       - name: Attach the data file to the release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
+          notes="era_data.sqlite.gz is every ERA journal list and ANZSRC classification this repository processes,"
+          notes="$notes in one SQLite database. era_data.nt.gz is its journals and ANZSRC codes as gzipped N-Triples,"
+          notes="$notes without the order of each journal's ISSNs and fields of research."
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --verify-tag --title "$TAG" \
-              --notes "era_data.sqlite.gz is every ERA journal list this repository processes, in one SQLite database."
+            gh release create "$TAG" --verify-tag --title "$TAG" --notes "$notes"
           fi
           gh release upload "$TAG" build/release/era_data.sqlite.gz build/release/era_data.sqlite.gz.sha256 --clobber
+          gh release upload "$TAG" build/release/era_data.nt.gz build/release/era_data.nt.gz.sha256 --clobber

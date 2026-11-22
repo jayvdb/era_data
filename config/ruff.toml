@@ -5,7 +5,7 @@
 # that ruff considered "already formatted" could still sit over the limit.
 line-length = 120
 
-# The Python mise.toml installs.
+# The Python mise.toml installs, which is also the python/ package's minimum.
 target-version = "py314"
 
 [format]
@@ -63,4 +63,5 @@ convention = "pep257"
 [lint.per-file-ignores]
 # Test modules: docstrings on test functions are noise, not API surface.
 # pytest collects tests/ as rootdir-relative modules, so it is not a package.
+"python/tests/**" = ["D", "INP001"]
 "tests/**" = ["D", "INP001"]
