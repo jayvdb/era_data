@@ -1,4 +1,4 @@
-//! The ERA journal lists and the ANZSRC classifications, as an RDF graph.
+//! The ERA journal and conference lists and the ANZSRC classifications, as an RDF graph.
 //!
 //! The data is the triple store published with the era_data release [`RELEASE`]: `era_data.nt.gz`, gzipped
 //! N-Triples. This crate has none of it. On first use, [`path`] downloads the file from GitHub, checks it against
@@ -25,7 +25,7 @@ use tempfile::NamedTempFile;
 /// The release the data comes from; `mise run pin` writes it and [`SHA256`].
 pub const RELEASE: &str = "data-v4";
 /// The SHA-256 of the N-Triples text in the release's file, in hex.
-pub const SHA256: &str = "b635033478d3fa666b1153a72fa0bbc21b21871de0eb789a93bac36dc33b2a28";
+pub const SHA256: &str = "bc68654497e876d01b82efea1fbf30cc8f75320d98ecc742cc9b87d764bcf5d6";
 /// The name of the release's file.
 pub const FILE: &str = "era_data.nt.gz";
 /// The environment variable naming a local copy of the file, which is used as it is.

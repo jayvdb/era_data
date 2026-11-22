@@ -169,3 +169,26 @@ def test_later_lists_have_no_ranks(connection):
         journals = Table(f"{prefix}_journal", metadata, autoload_with=connection)
         query = select(func.count()).select_from(journals).where(journals.columns.rank.is_not(None))
         assert connection.execute(query).scalar() == 0, prefix
+
+
+# The conference lists' counts are the spreadsheets' own. ERA 2015's has 6,302 FoR cells: 3 are MD, and 5 repeat a
+# code the conference already has.
+@pytest.mark.parametrize(
+    ("prefix", "conferences", "fields", "multidisciplinary"),
+    [("era2010", 1952, 2135, 0), ("era2015", 3735, 6294, 3)],
+)
+def test_conference_counts(connection, prefix, conferences, fields, multidisciplinary):
+    table = Table(f"{prefix}_conference", metadata, autoload_with=connection)
+    for_table = Table(f"{prefix}_conference_for", metadata, autoload_with=connection)
+    assert connection.execute(select(func.count()).select_from(table)).scalar() == conferences
+    assert connection.execute(select(func.count()).select_from(for_table)).scalar() == fields
+    query = select(func.count()).where(table.columns.multidisciplinary_ind == "Y")
+    assert connection.execute(query).scalar() == multidisciplinary
+
+
+def test_conference_rank_counts(connection):
+    """ERA 2010 is the only conference list with ranks; its 5 "Not ranked" conferences have none."""
+    for prefix, expected in (("era2010", {"A": 414, "B": 527, "C": 1006, "": 5}), ("era2015", {"": 3735})):
+        table = Table(f"{prefix}_conference", metadata, autoload_with=connection)
+        query = select(table.columns.rank, func.count()).group_by(table.columns.rank)
+        assert {(value or "").strip(): count for value, count in connection.execute(query)} == expected, prefix

@@ -1,7 +1,7 @@
 # era-data
 
-The Excellence in Research for Australia (ERA) journal lists of 2010, 2012, 2015, 2018 and 2023, and the ANZSRC 2008
-and 2020 Fields of Research and Socio-Economic Objectives, as one RDF graph.
+The Excellence in Research for Australia (ERA) journal lists of 2010, 2012, 2015, 2018 and 2023, its conference lists
+of 2010 and 2015, and the ANZSRC 2008 and 2020 Fields of Research and Socio-Economic Objectives, as one RDF graph.
 
 ```python
 import era_data

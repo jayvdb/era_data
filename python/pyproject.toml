@@ -1,6 +1,6 @@
 [project]
 dependencies = ["platformdirs>=4", "rdflib>=7"]
-description = "The ERA journal lists and the ANZSRC classifications, as an RDF graph"
+description = "The ERA journal and conference lists and the ANZSRC classifications, as an RDF graph"
 license = "MIT"
 name = "era-data"
 readme = "README.md"

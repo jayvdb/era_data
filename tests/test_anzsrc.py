@@ -12,19 +12,21 @@ LEVELS = {
     "anzsrc2020_seo": (19, 128, 840),
 }
 
-# Each journal list, with the ANZSRC edition whose divisions and groups it assigns its journals, and any codes it
-# assigns that are not in that edition.
-JOURNAL_LISTS: dict[str, tuple[str, list[str]]] = {
-    "era2010": ("2008", []),
-    "era2012": ("2008", []),
-    "era2015": ("2008", []),
-    "era2015c": ("2008", []),
-    "era2015s": ("2008", []),
-    "era2018": ("2008", []),
+# Each journal and conference list, by its table, with the ANZSRC edition whose divisions and groups it assigns, and
+# any codes it assigns that are not in that edition.
+ERA_LISTS: dict[str, tuple[str, list[str]]] = {
+    "era2010_journal": ("2008", []),
+    "era2010_conference": ("2008", []),
+    "era2012_journal": ("2008", []),
+    "era2015_journal": ("2008", []),
+    "era2015_conference": ("2008", []),
+    "era2015c_journal": ("2008", []),
+    "era2015s_journal": ("2008", []),
+    "era2018_journal": ("2008", []),
     # The revised ERA 2023 list gives journal 36264 4709, which ANZSRC 2020 does not have, for 3709, the group whose
     # name the list gives it, Physical geography and environmental geoscience.
-    "era2023": ("2020", ["470900"]),
-    "era2023o": ("2020", []),
+    "era2023_journal": ("2020", ["470900"]),
+    "era2023o_journal": ("2020", []),
 }
 
 
@@ -80,15 +82,15 @@ def test_names(connection, name, code, expected):
     assert result == expected
 
 
-@pytest.mark.parametrize("prefix", JOURNAL_LISTS)
-def test_journal_disciplines_are_one_edition(connection, prefix):
-    """Every discipline a journal list assigns is a division or group of its ANZSRC edition, and none of the other."""
-    journal_for = Table(f"{prefix}_journal_for", metadata, autoload_with=connection)
-    disciplines = select(journal_for.columns.discipline).distinct()
-    edition, exceptions = JOURNAL_LISTS[prefix]
+@pytest.mark.parametrize("name", ERA_LISTS)
+def test_disciplines_are_one_edition(connection, name):
+    """Every discipline an ERA list assigns is a division or group of its ANZSRC edition, and none of the other."""
+    list_for = Table(f"{name}_for", metadata, autoload_with=connection)
+    disciplines = select(list_for.columns.discipline).distinct()
+    edition, exceptions = ERA_LISTS[name]
     for other in ("2008", "2020"):
         anzsrc = Table(f"anzsrc{other}_for", metadata, autoload_with=connection)
-        unknown = disciplines.where(journal_for.columns.discipline.not_in(select(anzsrc.columns.code)))
+        unknown = disciplines.where(list_for.columns.discipline.not_in(select(anzsrc.columns.code)))
         result = sorted(row[0] for row in connection.execute(unknown))
         if other == edition:
             assert result == exceptions

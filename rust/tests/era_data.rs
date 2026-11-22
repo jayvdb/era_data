@@ -39,7 +39,7 @@ fn pinned_checksum() {
 fn graph() {
     let Some(file) = local() else { return };
     let graph = era_data::graph_from(file).unwrap();
-    assert_eq!(graph.len(), 1_562_967);
+    assert_eq!(graph.len(), 1_606_400);
     let title = Literal::new_simple_literal("Southerly: a review of Australian literature");
     assert_eq!(object(&graph, SOUTHERLY, TITLE), Some(title.as_ref().into()));
     assert_eq!(object(&graph, SOUTHERLY, RANK), Some(Literal::new_simple_literal("B").as_ref().into()));
@@ -54,7 +54,7 @@ fn ntriples_is_ascii() {
     let Some(file) = local() else { return };
     let text = era_data::ntriples_from(file).unwrap();
     assert!(text.is_ascii());
-    assert_eq!(text.lines().count(), 1_562_967);
+    assert_eq!(text.lines().count(), 1_606_400);
 }
 
 #[test]

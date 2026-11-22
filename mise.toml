@@ -121,7 +121,7 @@ run = "uv pip install -r requirements.txt"
 shell = "{{ vars.shell }}"
 
 [tasks.download]
-description = "Download the ERA tech packs and journal lists and the ANZSRC classifications into build/downloads/"
+description = "Download the ERA tech packs, journal and conference lists and ANZSRC classifications to build/downloads/"
 run = """
 mkdir -p build/downloads
 wayback=https://web.archive.org/web
@@ -150,6 +150,7 @@ $wayback/20150328231353/http://$arc/zip/ERA2010_tech_pack.zip
 $wayback/20140212022156/http://$arc//zip/ERA-SEER2012-tech-pack.zip
 $wayback/20140212022205/http://$arc/xls/era12/ERA2012JournalList.xlsx
 $wayback/20160505174054/https://$acu/0003/674283/ERA_2015_Submission_Journal_List.xlsx
+$wayback/20160505180743id_/https://$acu/0004/674284/ERA_2015_Submission_Conference_List.xlsx
 $wayback/20150921024910/https://tqft.net/math/ERA2015.csv
 $wayback/20160318210634/https://$arc_era/ERA%202015/ERA2015_Submitted_Journal_ListV2.xlsx
 $wayback/20200402191539id_/https://$arc/file/10549/download?token=Sbfb2a9n ERA2018_Journal_List.xlsx
@@ -166,8 +167,9 @@ shell = "{{ vars.shell }}"
 # The URLs above:
 # - The 2012 tech pack has no journal list in it, but is kept for reference.
 #   ERA2012JournalList.xlsx is the ERA 2012 journal list, published on its own.
-# - ERA_2015_Submission_Journal_List.xlsx is an online copy of the ERA 2015 journal list.
-#   Its conference list, ERA_2015_Submission_Conference_List.xlsx, is beside it under 0004/674284/, at 20160505180743.
+# - ERA_2015_Submission_Journal_List.xlsx is an online copy of the ERA 2015 journal list, and
+#   ERA_2015_Submission_Conference_List.xlsx of its conference list.
+#   The ERA 2018 and ERA 2023 conference lists went to universities, and no public copy of either is archived.
 # - ERA2015.csv is the 2015 consultation journal list from http://jacci.arc.gov.au/, kindly provided by
 #   https://sbseminar.wordpress.com/2014/02/24/australian-research-council-journal-list/
 # - ERA2018_Journal_List.xlsx is the ERA 2018 journal list, linked from the ARC's ERA 2018 Journal List page, which
@@ -181,8 +183,11 @@ shell = "{{ vars.shell }}"
 
 [tasks.extract]
 depends = ["download"]
-description = "Extract the ERA 2010 journal list and the ERA 2012 tech pack"
-outputs = ["build/downloads/ERA2010_tech_pack/code-table/XML-Format/ERA2010_journal_title_list.xml"]
+description = "Extract the ERA 2010 journal and conference lists and the ERA 2012 tech pack"
+outputs = [
+  "build/downloads/ERA2010_tech_pack/code-table/ERA2010_conference_list.xls",
+  "build/downloads/ERA2010_tech_pack/code-table/XML-Format/ERA2010_journal_title_list.xml",
+]
 run = """
 python -m zipfile -e build/downloads/ERA2010_tech_pack.zip build/downloads/ERA2010_tech_pack
 python -m zipfile -e build/downloads/ERA-SEER2012-tech-pack.zip build/downloads/ERA2012_tech_pack
@@ -286,6 +291,9 @@ while read -r stem prefix; do
 done <<'EOF'
 {{ vars.lists }}
 EOF
+for year in 2010 2015; do
+  schema conference_schema.sql conference "era${year}_conference" >"$DBDIR/schema${year}_conference.sql"
+done
 # Each ANZSRC edition has a table for its Fields of Research and one for its Socio-Economic Objectives.
 for edition in 2008 2020; do
   for classification in for seo; do
@@ -297,7 +305,7 @@ shell = "{{ vars.shell }}"
 
 [tasks.sql]
 depends = ["deps", "download", "xml"]
-description = "Convert each journal list and ANZSRC edition to SQL insert statements for $DB"
+description = "Convert each journal and conference list and each ANZSRC edition to SQL insert statements for $DB"
 run = """
 mkdir -p "$DBDIR"
 while read -r stem prefix; do
@@ -305,6 +313,14 @@ while read -r stem prefix; do
   python era_journal_list_sql.py "build/$stem.xml" "$prefix" "$DB" >"$DBDIR/$stem.sql"
 done <<'EOF'
 {{ vars.lists }}
+EOF
+while read -r src prefix; do
+  [ -n "$src" ] || continue
+  out="$DBDIR/ERA${prefix#era}_conference_list.sql"
+  python era_conference_list_sql.py "build/downloads/$src" "$prefix" "$DB" >"$out"
+done <<'EOF'
+ERA2010_tech_pack/code-table/ERA2010_conference_list.xls era2010
+ERA_2015_Submission_Conference_List.xlsx era2015
 EOF
 for edition in 2008 2020; do
   python anzsrc_sql.py "$edition" build/downloads "$DB" >"$DBDIR/anzsrc$edition.sql"
@@ -465,7 +481,7 @@ shell = "{{ vars.shell }}"
 
 [tasks."db:load"]
 depends = ["db:create", "schema", "sql"]
-description = "Create the tables and load the journal lists and ANZSRC classifications into the $DB database"
+description = "Create the tables and load the ERA lists and ANZSRC classifications into the $DB database"
 run = """
 # Runs a SQL script with the selected database's command-line client, as one transaction.
 # The data scripts are one INSERT per row, and committing each row on its own takes hours.
@@ -488,7 +504,9 @@ sqlcmd() {
 }
 # The tables first, then the data.
 for f in "$DBDIR"/schema20*.sql "$DBDIR"/schema_anzsrc*.sql; do sqlcmd "$f"; done
-for f in "$DBDIR"/ERA20*_journal_title_list.sql "$DBDIR"/anzsrc20*.sql; do sqlcmd "$f"; done
+for f in "$DBDIR"/ERA20*_journal_title_list.sql "$DBDIR"/ERA20*_conference_list.sql "$DBDIR"/anzsrc20*.sql; do
+  sqlcmd "$f"
+done
 """
 shell = "{{ vars.shell }}"
 
