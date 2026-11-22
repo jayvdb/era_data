@@ -23,9 +23,9 @@ use sha2::{Digest, Sha256};
 use tempfile::NamedTempFile;
 
 /// The release the data comes from; `mise run pin` writes it and [`SHA256`].
-pub const RELEASE: &str = "data-v3";
+pub const RELEASE: &str = "data-v4";
 /// The SHA-256 of the N-Triples text in the release's file, in hex.
-pub const SHA256: &str = "c341bf64bd9035e9ded5fb7ee649e44b4571b097b396703f1657b2e7bd107d7c";
+pub const SHA256: &str = "d19523afc818472615544ed3b89e96f1b5622fb6e723dc3d30d7175ac4b05892";
 /// The name of the release's file.
 pub const FILE: &str = "era_data.nt.gz";
 /// The environment variable naming a local copy of the file, which is used as it is.

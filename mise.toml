@@ -110,6 +110,7 @@ ERA2012_journal_title_list era2012
 ERA2015_journal_title_list era2015
 ERA2015_consultation_journal_title_list era2015c
 ERA2015_submitted_journal_title_list era2015s
+ERA2018_journal_title_list era2018
 """
 
 [tasks.deps]
@@ -133,10 +134,11 @@ abs2020=$abs2020/australian-and-new-zealand-standard-research-classification-anz
 corr2008='0547F1ACF1FCAF93CA2574320012F0DC/$File/1297.0%20correspondence%20tables.xls'
 fos2008='FC837D3FBE9EAFEACA257585001D7C72/$File/12970%20(2008)%20FOS%20(2007)%20Correspondence%20Table.xls'
 nabs2008='5C5DE1F0FECC817CCA257585001BA569/$File/12970%20(2008)%20NABS%20(2007)%20Correspondence%20Table.xls'
-while read -r url; do
+while read -r url name; do
   [ -n "$url" ] || continue
-  # Saved under the end of the URL, with each encoded space made an underscore and parentheses dropped.
-  file="build/downloads/$(printf '%s' "${url##*/}" | sed 's/%20/_/g;s/[()]//g')"
+  # Saved under the name after the URL, or else the end of the URL, with each encoded space made an underscore and
+  # parentheses dropped.
+  file="build/downloads/${name:-$(printf '%s' "${url##*/}" | sed 's/%20/_/g;s/[()]//g')}"
   if [ ! -s "$file" ]; then
     curl -fsSL --retry 5 --retry-all-errors -o "$file.part" "$url"
     mv "$file.part" "$file"
@@ -148,6 +150,7 @@ $wayback/20140212022205/http://$arc/xls/era12/ERA2012JournalList.xlsx
 $wayback/20160505174054/https://$acu/0003/674283/ERA_2015_Submission_Journal_List.xlsx
 $wayback/20150921024910/https://tqft.net/math/ERA2015.csv
 $wayback/20160318210634/https://$arc_era/ERA%202015/ERA2015_Submitted_Journal_ListV2.xlsx
+$wayback/20200402191539id_/https://$arc/file/10549/download?token=Sbfb2a9n ERA2018_Journal_List.xlsx
 $wayback/20101113155507id_/$abs2008/$corr2008
 $wayback/20140217035128id_/$abs2008/$fos2008
 $wayback/20140217035130id_/$abs2008/$nabs2008
@@ -163,6 +166,8 @@ shell = "{{ vars.shell }}"
 #   Its conference list, ERA_2015_Submission_Conference_List.xlsx, is beside it under 0004/674284/, at 20160505180743.
 # - ERA2015.csv is the 2015 consultation journal list from http://jacci.arc.gov.au/, kindly provided by
 #   https://sbseminar.wordpress.com/2014/02/24/australian-research-council-journal-list/
+# - ERA2018_Journal_List.xlsx is the ERA 2018 journal list, linked from the ARC's ERA 2018 Journal List page, which
+#   serves it as era_2018_journal_list.xlsx. The archive's first snapshot of it, at 20190822155724, is cut off at 1 MiB.
 # - The last five are the ABS's Australian and New Zealand Standard Research Classification (ANZSRC), cat. no. 1297.0.
 #   ERA 2010 to ERA 2018 used ANZSRC 2008, and ERA 2023 ANZSRC 2020; anzsrc_sql.py describes each file.
 #   The 2020 snapshots are of the release of 30 June 2020, which the ABS has since replaced with corrected labels.
@@ -181,25 +186,27 @@ sources = ["build/downloads/ERA-SEER2012-tech-pack.zip", "build/downloads/ERA201
 
 [tasks.convert]
 depends = ["deps", "download"]
-description = "Convert the ERA 2012 and 2015 spreadsheets to XML in the ERA 2010 journal list format"
+description = "Convert the ERA 2012, 2015 and 2018 spreadsheets to XML in the ERA 2010 journal list format"
 outputs = [
   "build/ERA2012JournalList.xml",
   "build/ERA2015JournalList.xml",
   "build/ERA2015JournalList_consultation.xml",
   "build/ERA2015JournalList_submitted.xml",
+  "build/ERA2018JournalList.xml",
 ]
 # Each spreadsheet goes to generic XML with era_journal_list_xml.py, and era_journal_list_tidy.xsl turns that into
-# the ERA 2010 layout.
+# the ERA 2010 layout. A line names the sheet to read after its output, when the list is not on the first sheet.
 run = """
-while read -r src out; do
+while read -r src out sheet; do
   [ -n "$src" ] || continue
-  python era_journal_list_xml.py "build/downloads/$src" "build/$out"
+  python era_journal_list_xml.py "build/downloads/$src" "build/$out" ${sheet:+"$sheet"}
   lxmlproc --output "build/$out.xml" era_journal_list_tidy.xsl "build/$out.messy-xml"
 done <<'EOF'
 ERA_2015_Submission_Journal_List.xlsx ERA2015JournalList
 ERA2012JournalList.xlsx ERA2012JournalList
 ERA2015.csv ERA2015JournalList_consultation
 ERA2015_Submitted_Journal_ListV2.xlsx ERA2015JournalList_submitted
+ERA2018_Journal_List.xlsx ERA2018JournalList ERA 2018 Journal List
 EOF
 """
 shell = "{{ vars.shell }}"
@@ -213,13 +220,14 @@ sources = [
 
 [tasks.xml]
 depends = ["convert", "extract"]
-description = "Write the five journal lists as build/ERA*_journal_title_list.xml, removing duplicate disciplines"
+description = "Write the six journal lists as build/ERA*_journal_title_list.xml, removing duplicate disciplines"
 outputs = [
   "build/ERA2010_journal_title_list.xml",
   "build/ERA2012_journal_title_list.xml",
   "build/ERA2015_consultation_journal_title_list.xml",
   "build/ERA2015_journal_title_list.xml",
   "build/ERA2015_submitted_journal_title_list.xml",
+  "build/ERA2018_journal_title_list.xml",
 ]
 run = """
 xsl=era_journal_list_2010_tidy.xsl
@@ -229,6 +237,7 @@ lxmlproc --output build/ERA2015_journal_title_list.xml "$xsl" build/ERA2015Journ
 cp build/ERA2012JournalList.xml build/ERA2012_journal_title_list.xml
 cp build/ERA2015JournalList_consultation.xml build/ERA2015_consultation_journal_title_list.xml
 cp build/ERA2015JournalList_submitted.xml build/ERA2015_submitted_journal_title_list.xml
+cp build/ERA2018JournalList.xml build/ERA2018_journal_title_list.xml
 """
 shell = "{{ vars.shell }}"
 sources = [
@@ -542,7 +551,7 @@ depends = ["rdf"]
 description = "Pin the python/ and rust/ packages to the release $TAG and the checksum of build/era_data.nt.gz"
 # Run before pushing a data-v* tag, and commit the result: the release workflow refuses to publish otherwise.
 run = """
-: "${TAG:?set TAG to the release tag, such as data-v3}"
+: "${TAG:?set TAG to the release tag, such as data-v4}"
 python pin.py "$TAG" build/era_data.nt.gz
 """
 shell = "{{ vars.shell }}"
@@ -562,7 +571,7 @@ shell = "{{ vars.shell }}"
 depends = ["rdf"]
 description = "Test the rust/ crate against build/era_data.nt.gz"
 env = { ERA_DATA_NT = "{{ config_root }}/build/era_data.nt.gz" }
-# --release, as an unoptimised build takes minutes to parse the 900,000 triples.
+# --release, as an unoptimised build takes minutes to parse the million triples.
 run = "cargo test --workspace --release"
 shell = "{{ vars.shell }}"
 

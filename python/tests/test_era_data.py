@@ -1,6 +1,7 @@
 """Tests of the era_data package, against the file named by ERA_DATA_NT: a local build of the release's file."""
 
 import gzip
+import importlib.util
 import os
 from pathlib import Path
 
@@ -27,7 +28,7 @@ def test_pinned_checksum():
 
 
 def test_triple_count(graph):
-    assert len(graph) == 912738
+    assert len(graph) == 1119923
 
 
 def test_journal(graph):
@@ -50,10 +51,42 @@ def test_concepts(graph):
     assert str(graph.value(division, SKOS.prefLabel)) == "INFORMATION AND COMPUTING SCIENCES"
 
 
+def test_journal_history_example(graph):
+    """The example's default journal, which changes in every way the lists record."""
+    path = Path(__file__).parent.parent / "examples" / "journal_history.py"
+    spec = importlib.util.spec_from_file_location("journal_history", path)
+    assert spec and spec.loader
+    example = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(example)
+    entries = dict(example.history(graph, example.DEFAULT))
+    assert list(entries) == [
+        "ERA 2010 journal list",
+        "ERA 2012 journal list",
+        "ERA 2015 consultation journal list",
+        "ERA 2015 journal list",
+        "ERA 2015 submitted journal list",
+        "ERA 2018 journal list",
+    ]
+    first, last = entries["ERA 2010 journal list"], entries["ERA 2018 journal list"]
+    assert first["title"] == "IEEE Transactions on Systems, Man and Cybernetics, Part B: Cybernetics"
+    assert first["rank"] == "A"
+    assert [code for code, _ in first["fields"]] == ["08", "09", "17"]
+    assert entries["ERA 2012 journal list"]["multidisciplinary"]
+    assert entries["ERA 2012 journal list"]["fields"] == []
+    assert last["title"] == "IEEE Transactions on Cybernetics"
+    assert last["rank"] is None
+    assert last["fields"] == [
+        ("0102", "Applied Mathematics"),
+        ("0801", "Artificial Intelligence and Image Processing"),
+        ("0906", "Electrical and Electronic Engineering"),
+    ]
+    assert last["issns"] == ["1083-4419", "1941-0492", "2168-2267", "2168-2275"]
+
+
 def test_ntriples_is_ascii():
     text = era_data.ntriples()
     assert text.isascii()
-    assert text.count("\n") == 912738
+    assert text.count("\n") == 1119923
 
 
 def test_fetch_downloads_and_caches(tmp_path):

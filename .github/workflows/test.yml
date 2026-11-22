@@ -43,7 +43,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: build/downloads
-          key: era-downloads-v2
+          key: era-downloads-v3
 
       # Installs mise and every tool in mise.toml.
       # GITHUB_TOKEN raises the api.github.com rate limit that mise's version lookups draw on.
@@ -74,7 +74,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: build/downloads
-          key: era-downloads-v2
+          key: era-downloads-v3
 
       - uses: jdx/mise-action@v5
         with:

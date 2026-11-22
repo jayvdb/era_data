@@ -1,6 +1,6 @@
 name: Release
 
-# A person releases by pushing a tag such as data-v3; nothing here creates a tag or a release on its own.
+# A person releases by pushing a tag such as data-v4; nothing here creates a tag or a release on its own.
 "on":
   push:
     tags:

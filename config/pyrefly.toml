@@ -2,7 +2,13 @@
 # Paths are relative to this file (config/), so repo-root files are reached via `../`. Pyrefly catches undefined
 # names and wrong argument/return types.
 
-project-includes = ["../*.py", "../python/src/**/*.py", "../python/tests/**/*.py", "../tests/**/*.py"]
+project-includes = [
+  "../*.py",
+  "../python/examples/**/*.py",
+  "../python/src/**/*.py",
+  "../python/tests/**/*.py",
+  "../tests/**/*.py",
+]
 
 # The Python the code is checked against, rather than whichever interpreter the host's PATH yields first.
 # Must equal the mise `python` pin.
@@ -17,7 +23,16 @@ search-path = ["..", "../python/src"]
 
 # Third-party deps that are absent from the lint environment.
 # `replace-imports-with-any` (rather than a blanket ignore) keeps import resolution deterministic on every OS.
-replace-imports-with-any = ["dicttoxml", "platformdirs", "pyexcel", "pytest", "rdflib", "sqlalchemy", "sqlalchemy.*"]
+replace-imports-with-any = [
+  "dicttoxml",
+  "platformdirs",
+  "pyexcel",
+  "pytest",
+  "rdflib",
+  "rdflib.*",
+  "sqlalchemy",
+  "sqlalchemy.*",
+]
 
 # Pin an empty container literal to its declared type, never to the type its first use suggests.
 # Without this, `items = []` followed by `items.append(1)` is inferred as `list[int]` and never reported, so

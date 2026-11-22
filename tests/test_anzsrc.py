@@ -13,7 +13,7 @@ LEVELS = {
 }
 
 # The journal lists, each of which assigns its journals ANZSRC 2008 divisions and groups.
-JOURNAL_LISTS = ["era2010", "era2012", "era2015", "era2015c", "era2015s"]
+JOURNAL_LISTS = ["era2010", "era2012", "era2015", "era2015c", "era2015s", "era2018"]
 
 
 @pytest.mark.parametrize("name", LEVELS)

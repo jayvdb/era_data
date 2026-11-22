@@ -109,6 +109,35 @@ def test_2015_submission_journal_for_count(connection):
     assert result == 27820
 
 
+# The ERA 2018 counts are the spreadsheet's own: 40,976 FoR cells, of which 798 are MD rather than a code.
+def test_2018_journal_count(connection):
+    era2018_journals = Table("era2018_journal", metadata, autoload_with=connection)
+    query = select(func.count(era2018_journals.columns.eraid))
+    result = connection.execute(query).scalar()
+    assert result == 25017
+
+
+def test_2018_journal_issn_count(connection):
+    era2018_journal_issn = Table("era2018_journal_issn", metadata, autoload_with=connection)
+    query = select(func.count(era2018_journal_issn.columns.issn))
+    result = connection.execute(query).scalar()
+    assert result == 41495
+
+
+def test_2018_journal_for_count(connection):
+    era2018_journal_for = Table("era2018_journal_for", metadata, autoload_with=connection)
+    query = select(func.count(era2018_journal_for.columns.eraid))
+    result = connection.execute(query).scalar()
+    assert result == 40178
+
+
+def test_2018_multidisciplinary_count(connection):
+    era2018_journals = Table("era2018_journal", metadata, autoload_with=connection)
+    query = select(func.count()).where(era2018_journals.columns.multidisciplinary_ind == "Y")
+    result = connection.execute(query).scalar()
+    assert result == 798
+
+
 def test_2010_rank_counts(connection):
     """ERA 2010 is the only list with ranks; its 279 "Not ranked" journals have none."""
     era2010_journals = Table("era2010_journal", metadata, autoload_with=connection)
@@ -119,7 +148,7 @@ def test_2010_rank_counts(connection):
 
 
 def test_later_lists_have_no_ranks(connection):
-    for prefix in ("era2012", "era2015", "era2015c", "era2015s"):
+    for prefix in ("era2012", "era2015", "era2015c", "era2015s", "era2018"):
         journals = Table(f"{prefix}_journal", metadata, autoload_with=connection)
         query = select(func.count()).select_from(journals).where(journals.columns.rank.is_not(None))
         assert connection.execute(query).scalar() == 0, prefix
