@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "sh web/vercel-install.sh",
+  "buildCommand": "MISE_ENABLE_TOOLS=node \"$HOME/.local/bin/mise\" run web",
+  "outputDirectory": "web/dist",
+  "headers": [
+    {
+      "source": "/era_data.nt.gz",
+      "headers": [{ "key": "Content-Type", "value": "application/gzip" }]
+    }
+  ]
+}

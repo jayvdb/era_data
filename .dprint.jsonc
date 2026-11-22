@@ -1,0 +1,5 @@
+// dprint takes the directory of the config file it finds as the root of the tree it formats, so this file anchors
+// it here and takes its settings from config/dprint.jsonc, beside the other linters' configs.
+{
+  "extends": "config/dprint.jsonc",
+}
