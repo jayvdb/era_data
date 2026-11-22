@@ -1,4 +1,4 @@
-"""The ERA journal lists and the ANZSRC classifications, as an RDF graph.
+"""The ERA journal and conference lists and the ANZSRC classifications, as an RDF graph.
 
 The data is the triple store published with the era_data release RELEASE: era_data.nt.gz, gzipped N-Triples.
 This package has none of it. On first use, `path()` downloads the file from GitHub, checks it against SHA256 and
@@ -25,7 +25,7 @@ __version__ = "0.1.0"
 
 # The release the data comes from, and the checksum of the N-Triples text in its file; `mise run pin` writes both.
 RELEASE = "data-v4"
-SHA256 = "b635033478d3fa666b1153a72fa0bbc21b21871de0eb789a93bac36dc33b2a28"
+SHA256 = "bc68654497e876d01b82efea1fbf30cc8f75320d98ecc742cc9b87d764bcf5d6"
 FILE = "era_data.nt.gz"
 URL = f"https://github.com/jayvdb/era_data/releases/download/{RELEASE}/{FILE}"
 

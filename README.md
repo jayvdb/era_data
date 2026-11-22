@@ -21,9 +21,10 @@ copies of it and its earlier versions:
   except for the Commonwealth Coat of Arms, the ARC logo, images, signatures and "where otherwise stated".
   Its NonCommercial term rules out commercial use, and its NoDerivatives term rules out sharing adapted material.
 
-So the ERA 2010 and ERA 2012 journal lists, and the ERA 2015 consultation list, were published while all rights
-were reserved, and the ERA 2015 lists under CC BY 3.0 AU. The ERA 2018 list was first released in 2017, under
-CC BY 3.0 AU, but the copy fetched here says "Copyright Commonwealth of Australia 2019", from after the change.
+So the ERA 2010 journal and conference lists, the ERA 2012 journal list and the ERA 2015 consultation list were
+published while all rights were reserved, and the other ERA 2015 lists under CC BY 3.0 AU. The ERA 2018 list was first
+released in 2017, under CC BY 3.0 AU, but the copy fetched here says "Copyright Commonwealth of Australia 2019", from
+after the change.
 The ERA 2023 lists were published in 2022, under CC BY-NC-ND 4.0, and are still on the ARC's website; the earlier
 lists are not. None of the files names a licence of its own: each says only that it is copyright of the
 Commonwealth, and the ERA 2010 tech pack's schemas allow reproduction "in unaltered form only".
@@ -35,9 +36,10 @@ trade marks, unit record data and content supplied by third parties, according t
 Australian and New Zealand Standard Research Classification (ANZSRC), cat. no. 1297.0, 2008 and 2020.
 
 To avoid this copyright problem, this repository does not contain any ERA data.
-Instead it provides tools to fetch the datasets and extract the facts in them: each journal's titles, ISSNs,
-fields of research and rank. Those facts, and none of the original files, are published as a SQLite database and
-an RDF triple store on this repository's GitHub releases, described under Releases below.
+Instead it provides tools to fetch the datasets and extract the facts in them: each journal's titles, ISSNs, fields of
+research and rank, and each conference's title, acronym, fields of research and rank. Those facts, and none of the
+original files, are published as a SQLite database and an RDF triple store on this repository's GitHub releases,
+described under Releases below.
 
 All files stored in this repository are available under the MIT license.
 
@@ -45,16 +47,42 @@ All files stored in this repository are available under the MIT license.
 
 The `download` task in `mise.toml` fetches the following from the [Internet Archive](https://web.archive.org/):
 
-* ERA 2010 tech pack, which contains the ERA 2010 journal list
+* ERA 2010 tech pack, which contains the ERA 2010 journal and conference lists
 * ERA 2012 tech pack, which has no journal list in it
 * ERA 2012 journal list
-* ERA 2015 journal list
+* ERA 2015 journal list and conference list
 * ERA 2015 consultation journal list
 * ERA 2015 submitted journal list
 * ERA 2018 journal list
 * ERA 2023 journal list, as first published in July 2022 and as revised later that year
 * ANZSRC 2008 and ANZSRC 2020 Fields of Research and Socio-Economic Objectives,
   from the Australian Bureau of Statistics (ABS)
+
+## The end of ERA
+
+ERA 2018 was the last round. The 2023 review of the ARC, led by Professor Margaret Sheil, recommended ending ERA
+and Engagement and Impact, as ERA had achieved its purpose and no longer justified its cost to universities. In
+August 2023 the government agreed, and ERA 2023 was stopped before assessment, leaving only its journal lists.
+The ARC is now designing a "modern data-driven approach with expert review", consulting the sector from 2025 on a
+proposed Research Insights Capability. Whether it will publish lists like these is not yet known.
+
+## Conference lists
+
+Three later rounds had conference lists besides ERA 2010's, but only two of the four are public:
+
+| Round    | Conference list                                                                          | Here |
+| -------- | ---------------------------------------------------------------------------------------- | ---- |
+| ERA 2010 | 1,952 conferences, ranked A, B or C, with up to three fields of research                 | yes  |
+| ERA 2012 | none: its guidelines say "The ERA Conference ID is no longer required"                   | --   |
+| ERA 2015 | the submission conference list: 3,735 conferences, with fields of research but no ranks | yes  |
+| ERA 2018 | a submission conference list, without fields of research, sent to universities           | no   |
+| ERA 2023 | a submission conference list, without fields of research, sent to universities           | no   |
+
+No public copy of the ERA 2018 or ERA 2023 list is archived: neither is on the ARC's website or in its ERA 2018
+technology pack. The pipeline reads the ERA 2010 list from the spreadsheet in its tech pack,
+`ERA2010_conference_list.xls`, rather than its XML copy, whose few accented letters and curly quotes were lost as
+U+FFFD replacement characters. As with journals, a conference keeps its ERA ID from one list to the next, a field of
+research of MD marks it multidisciplinary, and a code the list repeats is kept once.
 
 ## Research classifications
 
@@ -132,18 +160,19 @@ The servers keep running after the tests, for looking at the data; `mise run db:
 
 ## Releases
 
-Each release has `era_data.sqlite.gz`, a single SQLite database holding every journal list above,
+Each release has `era_data.sqlite.gz`, a single SQLite database holding every journal and conference list above,
 in the tables `era2010_journal`, `era2012_journal`, `era2015_journal`, `era2015c_journal` (consultation),
 `era2015s_journal` (submitted), `era2018_journal`, `era2023_journal` (revised) and `era2023o_journal` (as first
-published), each with its `_issn` and `_for` (field of research) tables,
-and the ANZSRC tables described above.
+published), each with its `_issn` and `_for` (field of research) tables, `era2010_conference` and
+`era2015_conference`, each with its `_for` table, and the ANZSRC tables described above.
 It is the data this pipeline produces, tested, not the original files, and `era_data.sqlite.gz.sha256`
 holds its checksum.
 
-Each release also has `era_data.nt.gz`, the journals and ANZSRC codes as an RDF triple store: gzipped N-Triples, one
-triple per line, sorted, and ASCII-only, with any other character as an N-Triples `\u` escape. `era_data.nt.gz.sha256`
-holds its checksum. `era_rdf.py` writes it from the SQLite database, leaving out the order of each journal's ISSNs
-and fields of research, which the SQLite tables keep in `column_id`; use the database where that order matters.
+Each release also has `era_data.nt.gz`, the journals, conferences and ANZSRC codes as an RDF triple store: gzipped
+N-Triples, one triple per line, sorted, and ASCII-only, with any other character as an N-Triples `\u` escape.
+`era_data.nt.gz.sha256` holds its checksum. `era_rdf.py` writes it from the SQLite database, leaving out the order of
+each journal's ISSNs and fields of research, which the SQLite tables keep in `column_id`; use the database where that
+order matters.
 
 * Each ANZSRC classification is a SKOS concept scheme, and each code a `skos:Concept` with its `skos:notation`,
   `skos:prefLabel` and `skos:broader` code. ANZSRC 2020 codes have the IRIs the ABS and ARDC publish them under, such
@@ -154,6 +183,9 @@ and fields of research, which the SQLite tables keep in `column_id`; use the dat
   assigns. A journal has its `dcterms:title`, `bibo:issn`s and the terms of `https://jayvdb.github.io/era_data/vocab#`:
   `eraId`, `journalList`, `multidisciplinary`, `foreignTitle`, `rank` (ERA 2010 only) and `fieldOfResearch`, which is
   the ANZSRC concept: of ANZSRC 2008, or for the ERA 2023 lists, ANZSRC 2020.
+* Each conference list is `<era2010-conferences>` or `<era2015-conferences>`, and each conference on it as
+  `<era2010-conferences/conference/42269>`, with the same terms as a journal but `acronym` in place of
+  `foreignTitle` and `bibo:issn`, and `conferenceList` in place of `journalList`.
 
 [VOCAB.md](VOCAB.md) documents each class and property. `mise run vocab` writes it from two files:
 `vocab/vocab.ttl`, which defines the vocabulary in OWL, and `vocab/shapes.ttl`, which gives the triple store's shape

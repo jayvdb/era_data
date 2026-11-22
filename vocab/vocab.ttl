@@ -1,4 +1,4 @@
-# The era_data vocabulary: the classes and properties era_rdf.py writes the journal lists with.
+# The era_data vocabulary: the classes and properties era_rdf.py writes the journal and conference lists with.
 # vocab_md.py writes VOCAB.md from this file and shapes.ttl.
 
 @prefix dcterms: <http://purl.org/dc/terms/> .
@@ -12,10 +12,10 @@
   a owl:Ontology ;
   dcterms:title "era_data vocabulary"@en ;
   dcterms:description """The terms the era_data triple store describes the Excellence in Research for Australia
-    (ERA) journal lists with. Each journal list is a JournalList, and each journal on it a Journal of that list
-    alone: a journal on several lists has an entry on each, which share its ERA ID. The ANZSRC codes are SKOS
-    concepts under the IRIs their publishers use, and the journals' titles and ISSNs are Dublin Core and BIBO
-    terms."""@en ;
+    (ERA) journal and conference lists with. Each journal list is a JournalList, and each journal on it a Journal of
+    that list alone: a journal on several lists has an entry on each, which share its ERA ID. Conference lists and
+    conferences are the same, as ConferenceList and Conference. The ANZSRC codes are SKOS concepts under the IRIs
+    their publishers use, and the titles and ISSNs are Dublin Core and BIBO terms."""@en ;
   rdfs:seeAlso <https://github.com/jayvdb/era_data> .
 
 era:JournalList
@@ -32,12 +32,26 @@ era:Journal
   rdfs:comment """A journal as one journal list has it. Its IRI is its list's, followed by /journal/ and its ERA ID,
     such as https://jayvdb.github.io/era_data/era2010/journal/11637."""@en .
 
+era:ConferenceList
+  a owl:Class ;
+  rdfs:label "Conference list"@en ;
+  rdfs:comment """One ERA conference list: the ERA 2010 list, which ranked conferences, or the ERA 2015 submission
+    list, which did not. Its IRI is https://jayvdb.github.io/era_data/era2010-conferences or
+    https://jayvdb.github.io/era_data/era2015-conferences."""@en .
+
+era:Conference
+  a owl:Class ;
+  rdfs:label "Conference"@en ;
+  rdfs:comment """A conference or conference series as one conference list has it. Its IRI is its list's, followed
+    by /conference/ and its ERA ID, such as
+    https://jayvdb.github.io/era_data/era2010-conferences/conference/42269."""@en .
+
 era:fieldOfResearchScheme
   a owl:ObjectProperty ;
   rdfs:label "field of research scheme"@en ;
-  rdfs:comment """The ANZSRC Fields of Research edition whose codes the list assigns its journals: ANZSRC 2008 for
-    the lists of ERA 2010 to 2018, and ANZSRC 2020 for the ERA 2023 lists."""@en ;
-  rdfs:domain era:JournalList ;
+  rdfs:comment """The ANZSRC Fields of Research edition whose codes the list assigns: ANZSRC 2008 for the lists of
+    ERA 2010 to 2018, and ANZSRC 2020 for the ERA 2023 lists."""@en ;
+  rdfs:domain [ owl:unionOf ( era:JournalList era:ConferenceList ) ] ;
   rdfs:range skos:ConceptScheme .
 
 era:journalList
@@ -47,12 +61,19 @@ era:journalList
   rdfs:domain era:Journal ;
   rdfs:range era:JournalList .
 
+era:conferenceList
+  a owl:ObjectProperty ;
+  rdfs:label "conference list"@en ;
+  rdfs:comment "The conference list the conference is on."@en ;
+  rdfs:domain era:Conference ;
+  rdfs:range era:ConferenceList .
+
 era:eraId
   a owl:DatatypeProperty ;
   rdfs:label "ERA ID"@en ;
-  rdfs:comment """The ERA journal ID the list gives the journal. The lists keep a journal's ID from one to the next,
-    so it is what links a journal's entries on different lists."""@en ;
-  rdfs:domain era:Journal ;
+  rdfs:comment """The ERA ID the list gives the journal or conference. The lists keep an ID from one to the next,
+    so it is what links a journal's, or a conference's, entries on different lists."""@en ;
+  rdfs:domain [ owl:unionOf ( era:Journal era:Conference ) ] ;
   rdfs:range xsd:integer .
 
 era:foreignTitle
@@ -62,24 +83,32 @@ era:foreignTitle
   rdfs:domain era:Journal ;
   rdfs:range xsd:string .
 
+era:acronym
+  a owl:DatatypeProperty ;
+  rdfs:label "acronym"@en ;
+  rdfs:comment "The conference's acronym, where the list gives one."@en ;
+  rdfs:domain era:Conference ;
+  rdfs:range xsd:string .
+
 era:multidisciplinary
   a owl:DatatypeProperty ;
   rdfs:label "multidisciplinary"@en ;
-  rdfs:comment "Whether the list marks the journal MD, multidisciplinary."@en ;
-  rdfs:domain era:Journal ;
+  rdfs:comment "Whether the list marks the journal or conference MD, multidisciplinary."@en ;
+  rdfs:domain [ owl:unionOf ( era:Journal era:Conference ) ] ;
   rdfs:range xsd:boolean .
 
 era:rank
   a owl:DatatypeProperty ;
   rdfs:label "rank"@en ;
-  rdfs:comment "The journal's rank. Only the ERA 2010 list ranked journals, and it left some unranked."@en ;
-  rdfs:domain era:Journal ;
+  rdfs:comment """The journal's or conference's rank. Only the ERA 2010 lists ranked them, and they left some
+    unranked."""@en ;
+  rdfs:domain [ owl:unionOf ( era:Journal era:Conference ) ] ;
   rdfs:range xsd:string .
 
 era:fieldOfResearch
   a owl:ObjectProperty ;
   rdfs:label "field of research"@en ;
-  rdfs:comment """A field of research the list assigns the journal: a division or group of the list's
+  rdfs:comment """A field of research the list assigns the journal or conference: a division or group of the list's
     fieldOfResearchScheme."""@en ;
-  rdfs:domain era:Journal ;
+  rdfs:domain [ owl:unionOf ( era:Journal era:Conference ) ] ;
   rdfs:range skos:Concept .

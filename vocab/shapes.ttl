@@ -1,5 +1,5 @@
 # SHACL shapes of the era_data triple store: which properties each kind of resource has, how many of each, and of
-# what type. `mise run rdf` validates build/era_data.nt.gz against them, and vocab_md.py writes VOCAB.md from them
+# what type. `mise run shacl` validates build/era_data.nt.gz against them, and vocab_md.py writes VOCAB.md from them
 # and vocab.ttl. Each shape is closed, so a property the triple store uses and VOCAB.md does not describe fails.
 
 @prefix bibo: <http://purl.org/ontology/bibo/> .
@@ -50,6 +50,83 @@ shape:JournalListFields
         FILTER NOT EXISTS { ?value skos:inScheme ?scheme }
       }
     """ ;
+  ] .
+
+shape:ConferenceList
+  a sh:NodeShape ;
+  sh:targetClass era:ConferenceList ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path dcterms:title ;
+    sh:description "The list's title, such as ERA 2010 conference list."@en ;
+    sh:datatype rdf:langString ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path era:fieldOfResearchScheme ;
+    sh:class skos:ConceptScheme ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] .
+
+shape:ConferenceListFields
+  a sh:NodeShape ;
+  sh:targetClass era:ConferenceList ;
+  sh:description "Each field of research of a conference on the list is in the list's fieldOfResearchScheme."@en ;
+  sh:sparql [
+    a sh:SPARQLConstraint ;
+    sh:message "A conference on the list has a field of research outside the list's fieldOfResearchScheme"@en ;
+    sh:prefixes shape:prefixes ;
+    sh:select """
+      SELECT $this ?value
+      WHERE {
+        $this era:fieldOfResearchScheme ?scheme .
+        ?conference era:conferenceList $this ;
+          era:fieldOfResearch ?value .
+        FILTER NOT EXISTS { ?value skos:inScheme ?scheme }
+      }
+    """ ;
+  ] .
+
+shape:Conference
+  a sh:NodeShape ;
+  sh:targetClass era:Conference ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path era:conferenceList ;
+    sh:class era:ConferenceList ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path era:eraId ;
+    sh:datatype xsd:integer ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path dcterms:title ;
+    sh:description "The conference's title, as the list has it."@en ;
+    sh:datatype xsd:string ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path era:acronym ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path era:multidisciplinary ;
+    sh:datatype xsd:boolean ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path era:rank ;
+    sh:datatype xsd:string ;
+    sh:in ( "A" "B" "C" ) ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path era:fieldOfResearch ;
+    sh:class skos:Concept ;
   ] .
 
 shape:prefixes

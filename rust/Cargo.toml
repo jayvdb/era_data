@@ -1,6 +1,6 @@
 [package]
 categories = ["science"]
-description = "The ERA journal lists and the ANZSRC classifications, as an RDF graph"
+description = "The ERA journal and conference lists and the ANZSRC classifications, as an RDF graph"
 edition = "2024"
 keywords = ["anzsrc", "australia", "rdf", "research"]
 license = "MIT"

@@ -28,7 +28,7 @@ def test_pinned_checksum():
 
 
 def test_triple_count(graph):
-    assert len(graph) == 1562967
+    assert len(graph) == 1606400
 
 
 def test_journal(graph):
@@ -94,7 +94,7 @@ def test_journal_history_example(graph):
 def test_ntriples_is_ascii():
     text = era_data.ntriples()
     assert text.isascii()
-    assert text.count("\n") == 1562967
+    assert text.count("\n") == 1606400
 
 
 def test_fetch_downloads_and_caches(tmp_path):

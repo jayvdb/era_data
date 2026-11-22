@@ -8,8 +8,8 @@ character written as an N-Triples Unicode escape, and the gzip header has no nam
 
 The ANZSRC codes are SKOS concepts under the IRIs their publishers use: linked.data.gov.au's for ANZSRC 2020,
 which the ABS and ARDC publish, and ARDC's purl.org vocabularies for ANZSRC 2008.
-The journal lists and journals are under NAMESPACE, with the terms of this repository's own vocabulary in VOCAB,
-which vocab/vocab.ttl defines and VOCAB.md describes.
+The journal and conference lists, journals and conferences are under NAMESPACE, with the terms of this repository's
+own vocabulary in VOCAB, which vocab/vocab.ttl defines and VOCAB.md describes.
 """
 
 import gzip
@@ -46,6 +46,12 @@ LISTS = {
     "era2018": ("ERA 2018 journal list", "anzsrc2008_for"),
     "era2023": ("ERA 2023 revised journal list", "anzsrc2020_for"),
     "era2023o": ("ERA 2023 original journal list", "anzsrc2020_for"),
+}
+
+# Each conference list, by the prefix of its tables, with its title and the ANZSRC table its fields of research are in.
+CONFERENCE_LISTS = {
+    "era2010": ("ERA 2010 conference list", "anzsrc2008_for"),
+    "era2015": ("ERA 2015 conference list", "anzsrc2008_for"),
 }
 
 
@@ -138,10 +144,38 @@ def journals(db, prefix):
         yield journal(eraid), iri(VOCAB + "fieldOfResearch"), iri(concept(fields, discipline))
 
 
+def conferences(db, prefix):
+    """Yield the triples of one conference list and its conferences."""
+    conference_list = iri(f"{NAMESPACE}{prefix}-conferences")
+    yield conference_list, iri(RDF_TYPE), iri(VOCAB + "ConferenceList")
+    title, fields = CONFERENCE_LISTS[prefix]
+    yield conference_list, iri(DCTERMS_TITLE), literal(title, language="en")
+    yield conference_list, iri(VOCAB + "fieldOfResearchScheme"), iri(SCHEMES[fields][0].rstrip("/"))
+
+    def conference(eraid):
+        return iri(f"{NAMESPACE}{prefix}-conferences/conference/{eraid}")
+
+    rows = db.execute(f"select eraid, title, acronym, rank, multidisciplinary_ind from {prefix}_conference")
+    for eraid, title, acronym, rank, multidisciplinary in rows:
+        subject = conference(eraid)
+        yield subject, iri(RDF_TYPE), iri(VOCAB + "Conference")
+        yield subject, iri(VOCAB + "conferenceList"), conference_list
+        yield subject, iri(VOCAB + "eraId"), literal(eraid, "integer")
+        yield subject, iri(DCTERMS_TITLE), literal(title)
+        yield subject, iri(VOCAB + "multidisciplinary"), literal(str(multidisciplinary == "Y").lower(), "boolean")
+        if acronym:
+            yield subject, iri(VOCAB + "acronym"), literal(acronym)
+        if rank:
+            yield subject, iri(VOCAB + "rank"), literal(rank.strip())
+    for eraid, discipline in db.execute(f"select eraid, discipline from {prefix}_conference_for"):
+        yield conference(eraid), iri(VOCAB + "fieldOfResearch"), iri(concept(fields, discipline))
+
+
 def lines(db):
     """Return every triple in the database as a sorted list of N-Triples lines."""
     triples = [triple for table in SCHEMES for triple in anzsrc(db, table)]
     triples += [triple for prefix in LISTS for triple in journals(db, prefix)]
+    triples += [triple for prefix in CONFERENCE_LISTS for triple in conferences(db, prefix)]
     return sorted({" ".join(triple) + " .\n" for triple in triples})
 
 

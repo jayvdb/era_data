@@ -135,3 +135,25 @@ def test_2012_unicode(connection):
     query = select(era2012_journals.columns.foreign_title).where(era2012_journals.columns.eraid == 6859)
     result = connection.execute(query).first()[0]
     assert result == "Arkiv f\u00f6r nordisk filologi"
+
+
+def test_conference_3dim(connection):
+    """3-D Digital Imaging and Modelling is on both conference lists, with the same field of research."""
+    for prefix, rank in (("era2010", "C"), ("era2015", None)):
+        conferences = Table(f"{prefix}_conference", metadata, autoload_with=connection)
+        columns = conferences.columns
+        query = select(columns.title, columns.acronym, columns.rank).where(columns.eraid == 42269)
+        assert tuple(connection.execute(query).first()) == ("3-D Digital Imaging and Modelling", "3DIM", rank)
+        conference_for = Table(f"{prefix}_conference_for", metadata, autoload_with=connection)
+        query = select(conference_for.columns.discipline).where(conference_for.columns.eraid == 42269)
+        assert connection.execute(query).fetchall() == [("080100",)]
+
+
+def test_conference_unicode(connection):
+    """The spreadsheets keep the characters the ERA 2010 conference list's XML lost."""
+    for prefix in ("era2010", "era2015"):
+        conferences = Table(f"{prefix}_conference", metadata, autoload_with=connection)
+        query = select(conferences.columns.title).where(conferences.columns.eraid == 44078)
+        assert connection.execute(query).scalar() == (
+            "Symposium on \u2018Building Simulation in the Southwest of England\u2019"
+        )
