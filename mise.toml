@@ -111,6 +111,8 @@ ERA2015_journal_title_list era2015
 ERA2015_consultation_journal_title_list era2015c
 ERA2015_submitted_journal_title_list era2015s
 ERA2018_journal_title_list era2018
+ERA2023_journal_title_list era2023
+ERA2023_original_journal_title_list era2023o
 """
 
 [tasks.deps]
@@ -151,6 +153,8 @@ $wayback/20160505174054/https://$acu/0003/674283/ERA_2015_Submission_Journal_Lis
 $wayback/20150921024910/https://tqft.net/math/ERA2015.csv
 $wayback/20160318210634/https://$arc_era/ERA%202015/ERA2015_Submitted_Journal_ListV2.xlsx
 $wayback/20200402191539id_/https://$arc/file/10549/download?token=Sbfb2a9n ERA2018_Journal_List.xlsx
+$wayback/20220903191004id_/https://$arc/sites/default/files/2022-07/ERA%202023%20Submission%20Journal%20List.xlsx
+$wayback/20221101104238id_/https://$arc/sites/default/files/2022-07/ERA2023%20Submission%20Journal%20List.xlsx
 $wayback/20101113155507id_/$abs2008/$corr2008
 $wayback/20140217035128id_/$abs2008/$fos2008
 $wayback/20140217035130id_/$abs2008/$nabs2008
@@ -168,6 +172,8 @@ shell = "{{ vars.shell }}"
 #   https://sbseminar.wordpress.com/2014/02/24/australian-research-council-journal-list/
 # - ERA2018_Journal_List.xlsx is the ERA 2018 journal list, linked from the ARC's ERA 2018 Journal List page, which
 #   serves it as era_2018_journal_list.xlsx. The archive's first snapshot of it, at 20190822155724, is cut off at 1 MiB.
+# - ERA_2023_Submission_Journal_List.xlsx is the ERA 2023 journal list as first published, on 26 July 2022, and
+#   ERA2023_Submission_Journal_List.xlsx its revision, first archived on 1 November 2022. The ARC still serves both.
 # - The last five are the ABS's Australian and New Zealand Standard Research Classification (ANZSRC), cat. no. 1297.0.
 #   ERA 2010 to ERA 2018 used ANZSRC 2008, and ERA 2023 ANZSRC 2020; anzsrc_sql.py describes each file.
 #   The 2020 snapshots are of the release of 30 June 2020, which the ABS has since replaced with corrected labels.
@@ -186,13 +192,15 @@ sources = ["build/downloads/ERA-SEER2012-tech-pack.zip", "build/downloads/ERA201
 
 [tasks.convert]
 depends = ["deps", "download"]
-description = "Convert the ERA 2012, 2015 and 2018 spreadsheets to XML in the ERA 2010 journal list format"
+description = "Convert the ERA 2012, 2015, 2018 and 2023 spreadsheets to XML in the ERA 2010 journal list format"
 outputs = [
   "build/ERA2012JournalList.xml",
   "build/ERA2015JournalList.xml",
   "build/ERA2015JournalList_consultation.xml",
   "build/ERA2015JournalList_submitted.xml",
   "build/ERA2018JournalList.xml",
+  "build/ERA2023JournalList.xml",
+  "build/ERA2023JournalList_original.xml",
 ]
 # Each spreadsheet goes to generic XML with era_journal_list_xml.py, and era_journal_list_tidy.xsl turns that into
 # the ERA 2010 layout. A line names the sheet to read after its output, when the list is not on the first sheet.
@@ -207,6 +215,8 @@ ERA2012JournalList.xlsx ERA2012JournalList
 ERA2015.csv ERA2015JournalList_consultation
 ERA2015_Submitted_Journal_ListV2.xlsx ERA2015JournalList_submitted
 ERA2018_Journal_List.xlsx ERA2018JournalList ERA 2018 Journal List
+ERA2023_Submission_Journal_List.xlsx ERA2023JournalList ERA2023 Submission Journal List
+ERA_2023_Submission_Journal_List.xlsx ERA2023JournalList_original ERA2023 Submission Journal List
 EOF
 """
 shell = "{{ vars.shell }}"
@@ -220,7 +230,7 @@ sources = [
 
 [tasks.xml]
 depends = ["convert", "extract"]
-description = "Write the six journal lists as build/ERA*_journal_title_list.xml, removing duplicate disciplines"
+description = "Write the eight journal lists as build/ERA*_journal_title_list.xml, removing duplicate disciplines"
 outputs = [
   "build/ERA2010_journal_title_list.xml",
   "build/ERA2012_journal_title_list.xml",
@@ -228,6 +238,8 @@ outputs = [
   "build/ERA2015_journal_title_list.xml",
   "build/ERA2015_submitted_journal_title_list.xml",
   "build/ERA2018_journal_title_list.xml",
+  "build/ERA2023_journal_title_list.xml",
+  "build/ERA2023_original_journal_title_list.xml",
 ]
 run = """
 xsl=era_journal_list_2010_tidy.xsl
@@ -238,10 +250,13 @@ cp build/ERA2012JournalList.xml build/ERA2012_journal_title_list.xml
 cp build/ERA2015JournalList_consultation.xml build/ERA2015_consultation_journal_title_list.xml
 cp build/ERA2015JournalList_submitted.xml build/ERA2015_submitted_journal_title_list.xml
 cp build/ERA2018JournalList.xml build/ERA2018_journal_title_list.xml
+# Both ERA 2023 lists give journal 44852 the same field of research twice.
+lxmlproc --output build/ERA2023_journal_title_list.xml "$xsl" build/ERA2023JournalList.xml
+lxmlproc --output build/ERA2023_original_journal_title_list.xml "$xsl" build/ERA2023JournalList_original.xml
 """
 shell = "{{ vars.shell }}"
 sources = [
-  "build/ERA201*JournalList*.xml",
+  "build/ERA20*JournalList*.xml",
   "build/downloads/ERA2010_tech_pack/code-table/XML-Format/ERA2010_journal_title_list.xml",
   "era_journal_list_2010_tidy.xsl",
 ]
@@ -472,8 +487,8 @@ sqlcmd() {
   esac
 }
 # The tables first, then the data.
-for f in "$DBDIR"/schema201*.sql "$DBDIR"/schema_anzsrc*.sql; do sqlcmd "$f"; done
-for f in "$DBDIR"/ERA201*_journal_title_list.sql "$DBDIR"/anzsrc20*.sql; do sqlcmd "$f"; done
+for f in "$DBDIR"/schema20*.sql "$DBDIR"/schema_anzsrc*.sql; do sqlcmd "$f"; done
+for f in "$DBDIR"/ERA20*_journal_title_list.sql "$DBDIR"/anzsrc20*.sql; do sqlcmd "$f"; done
 """
 shell = "{{ vars.shell }}"
 
@@ -522,8 +537,20 @@ description = "Write build/era_data.nt.gz, the whole tested SQLite database as g
 run = "python era_rdf.py build/sqlite3/era_data.sqlite build/era_data.nt.gz"
 shell = "{{ vars.shell }}"
 
+[tasks.shacl]
+depends = ["deps", "rdf"]
+description = "Validate build/era_data.nt.gz against the SHACL shapes in vocab/shapes.ttl"
+run = "python era_shacl.py build/era_data.nt.gz"
+shell = "{{ vars.shell }}"
+
+[tasks.vocab]
+depends = ["deps"]
+description = "Write VOCAB.md from vocab/vocab.ttl and vocab/shapes.ttl"
+run = "python vocab_md.py"
+shell = "{{ vars.shell }}"
+
 [tasks.release]
-depends = ["rdf"]
+depends = ["rdf", "shacl"]
 description = "Write the release's files into build/release/: the database as SQLite and as N-Triples, with checksums"
 # The release is the data this pipeline produces, in tested files that any language can read: era_data.sqlite.gz,
 # and era_data.nt.gz, the triple store the python/ and rust/ packages download.
@@ -571,7 +598,7 @@ shell = "{{ vars.shell }}"
 depends = ["rdf"]
 description = "Test the rust/ crate against build/era_data.nt.gz"
 env = { ERA_DATA_NT = "{{ config_root }}/build/era_data.nt.gz" }
-# --release, as an unoptimised build takes minutes to parse the million triples.
+# --release, as an unoptimised build takes minutes to parse the 1.5 million triples.
 run = "cargo test --workspace --release"
 shell = "{{ vars.shell }}"
 

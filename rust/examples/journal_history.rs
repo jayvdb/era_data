@@ -11,7 +11,7 @@ use std::process::ExitCode;
 use oxrdf::vocab::xsd;
 use oxrdf::{Graph, Literal, NamedNodeRef, TermRef};
 
-/// IEEE Transactions on Cybernetics: renamed, assigned divisions, then MD, then groups, and given more ISSNs.
+/// IEEE Transactions on Cybernetics: renamed, and given divisions, MD, then 2008 and 2020 groups, and more ISSNs.
 const DEFAULT: u32 = 4465;
 
 const TITLE: NamedNodeRef<'_> = NamedNodeRef::new_unchecked("http://purl.org/dc/terms/title");

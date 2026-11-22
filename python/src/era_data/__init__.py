@@ -25,7 +25,7 @@ __version__ = "0.1.0"
 
 # The release the data comes from, and the checksum of the N-Triples text in its file; `mise run pin` writes both.
 RELEASE = "data-v4"
-SHA256 = "d19523afc818472615544ed3b89e96f1b5622fb6e723dc3d30d7175ac4b05892"
+SHA256 = "b635033478d3fa666b1153a72fa0bbc21b21871de0eb789a93bac36dc33b2a28"
 FILE = "era_data.nt.gz"
 URL = f"https://github.com/jayvdb/era_data/releases/download/{RELEASE}/{FILE}"
 

@@ -43,7 +43,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: build/downloads
-          key: era-downloads-v3
+          key: era-downloads-v4
 
       # Installs mise and every tool in mise.toml.
       # GITHUB_TOKEN raises the api.github.com rate limit that mise's version lookups draw on.
@@ -74,7 +74,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: build/downloads
-          key: era-downloads-v3
+          key: era-downloads-v4
 
       - uses: jdx/mise-action@v5
         with:
@@ -83,3 +83,8 @@ jobs:
       # Builds the triple store from the SQLite pipeline, then tests the python/ and rust/ packages against it.
       - name: Test the packages
         run: mise run test:packages
+
+      # The triple store is the same on every OS, so one validation of it is enough.
+      - name: Validate the triple store against its SHACL shapes
+        if: runner.os == 'Linux'
+        run: mise run shacl

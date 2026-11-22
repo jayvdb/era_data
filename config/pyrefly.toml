@@ -27,6 +27,7 @@ replace-imports-with-any = [
   "dicttoxml",
   "platformdirs",
   "pyexcel",
+  "pyshacl",
   "pytest",
   "rdflib",
   "rdflib.*",

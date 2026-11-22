@@ -12,8 +12,20 @@ LEVELS = {
     "anzsrc2020_seo": (19, 128, 840),
 }
 
-# The journal lists, each of which assigns its journals ANZSRC 2008 divisions and groups.
-JOURNAL_LISTS = ["era2010", "era2012", "era2015", "era2015c", "era2015s", "era2018"]
+# Each journal list, with the ANZSRC edition whose divisions and groups it assigns its journals, and any codes it
+# assigns that are not in that edition.
+JOURNAL_LISTS: dict[str, tuple[str, list[str]]] = {
+    "era2010": ("2008", []),
+    "era2012": ("2008", []),
+    "era2015": ("2008", []),
+    "era2015c": ("2008", []),
+    "era2015s": ("2008", []),
+    "era2018": ("2008", []),
+    # The revised ERA 2023 list gives journal 36264 4709, which ANZSRC 2020 does not have, for 3709, the group whose
+    # name the list gives it, Physical geography and environmental geoscience.
+    "era2023": ("2020", ["470900"]),
+    "era2023o": ("2020", []),
+}
 
 
 @pytest.mark.parametrize("name", LEVELS)
@@ -69,12 +81,16 @@ def test_names(connection, name, code, expected):
 
 
 @pytest.mark.parametrize("prefix", JOURNAL_LISTS)
-def test_journal_disciplines_are_anzsrc2008(connection, prefix):
-    """Every discipline a journal list assigns is a division or group of ANZSRC 2008, and some are not of 2020."""
+def test_journal_disciplines_are_one_edition(connection, prefix):
+    """Every discipline a journal list assigns is a division or group of its ANZSRC edition, and none of the other."""
     journal_for = Table(f"{prefix}_journal_for", metadata, autoload_with=connection)
     disciplines = select(journal_for.columns.discipline).distinct()
-    for edition, missing in (("2008", False), ("2020", True)):
-        anzsrc = Table(f"anzsrc{edition}_for", metadata, autoload_with=connection)
+    edition, exceptions = JOURNAL_LISTS[prefix]
+    for other in ("2008", "2020"):
+        anzsrc = Table(f"anzsrc{other}_for", metadata, autoload_with=connection)
         unknown = disciplines.where(journal_for.columns.discipline.not_in(select(anzsrc.columns.code)))
-        result = connection.execute(unknown).fetchall()
-        assert bool(result) == missing, result[:5]
+        result = sorted(row[0] for row in connection.execute(unknown))
+        if other == edition:
+            assert result == exceptions
+        else:
+            assert len(result) == connection.execute(select(func.count()).select_from(disciplines.subquery())).scalar()

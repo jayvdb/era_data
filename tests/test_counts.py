@@ -1,3 +1,4 @@
+import pytest
 from sqlalchemy import MetaData, Table, func
 from sqlalchemy.sql import select
 
@@ -138,6 +139,22 @@ def test_2018_multidisciplinary_count(connection):
     assert result == 798
 
 
+# The ERA 2023 counts are the spreadsheets' own: each has 911 MD cells, and one journal given the same code twice.
+@pytest.mark.parametrize(
+    ("prefix", "journals", "issns", "fields"),
+    [("era2023", 26246, 47657, 42096), ("era2023o", 26241, 47661, 42092)],
+)
+def test_2023_counts(connection, prefix, journals, issns, fields):
+    counts: list[int] = []
+    for suffix in ("", "_issn", "_for"):
+        table = Table(f"{prefix}_journal{suffix}", metadata, autoload_with=connection)
+        counts.append(connection.execute(select(func.count()).select_from(table)).scalar())
+    assert counts == [journals, issns, fields]
+    table = Table(f"{prefix}_journal", metadata, autoload_with=connection)
+    query = select(func.count()).where(table.columns.multidisciplinary_ind == "Y")
+    assert connection.execute(query).scalar() == 911
+
+
 def test_2010_rank_counts(connection):
     """ERA 2010 is the only list with ranks; its 279 "Not ranked" journals have none."""
     era2010_journals = Table("era2010_journal", metadata, autoload_with=connection)
@@ -148,7 +165,7 @@ def test_2010_rank_counts(connection):
 
 
 def test_later_lists_have_no_ranks(connection):
-    for prefix in ("era2012", "era2015", "era2015c", "era2015s", "era2018"):
+    for prefix in ("era2012", "era2015", "era2015c", "era2015s", "era2018", "era2023", "era2023o"):
         journals = Table(f"{prefix}_journal", metadata, autoload_with=connection)
         query = select(func.count()).select_from(journals).where(journals.columns.rank.is_not(None))
         assert connection.execute(query).scalar() == 0, prefix

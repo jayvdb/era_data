@@ -1,0 +1,165 @@
+# SHACL shapes of the era_data triple store: which properties each kind of resource has, how many of each, and of
+# what type. `mise run rdf` validates build/era_data.nt.gz against them, and vocab_md.py writes VOCAB.md from them
+# and vocab.ttl. Each shape is closed, so a property the triple store uses and VOCAB.md does not describe fails.
+
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix era: <https://jayvdb.github.io/era_data/vocab#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix shape: <https://jayvdb.github.io/era_data/shapes#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+shape:JournalList
+  a sh:NodeShape ;
+  sh:targetClass era:JournalList ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path dcterms:title ;
+    sh:description "The list's title, such as ERA 2010 journal list."@en ;
+    sh:datatype rdf:langString ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path era:fieldOfResearchScheme ;
+    sh:class skos:ConceptScheme ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] .
+
+# The edition check, as a shape of its own for its severity: SHACL takes a result's severity from its shape.
+# It targets each list, rather than each journal, so it runs one query per list rather than one per journal.
+shape:JournalListFields
+  a sh:NodeShape ;
+  sh:targetClass era:JournalList ;
+  sh:description """Each field of research of a journal on the list is in the list's fieldOfResearchScheme. Only a
+    warning, as the revised ERA 2023 list gives journal 36264 the code 4709, which ANZSRC 2020 does not have."""@en ;
+  sh:severity sh:Warning ;
+  sh:sparql [
+    a sh:SPARQLConstraint ;
+    sh:message "A journal on the list has a field of research outside the list's fieldOfResearchScheme"@en ;
+    sh:prefixes shape:prefixes ;
+    sh:select """
+      SELECT $this ?value
+      WHERE {
+        $this era:fieldOfResearchScheme ?scheme .
+        ?journal era:journalList $this ;
+          era:fieldOfResearch ?value .
+        FILTER NOT EXISTS { ?value skos:inScheme ?scheme }
+      }
+    """ ;
+  ] .
+
+shape:prefixes
+  sh:declare [
+    sh:prefix "era" ;
+    sh:namespace "https://jayvdb.github.io/era_data/vocab#"^^xsd:anyURI ;
+  ] , [
+    sh:prefix "skos" ;
+    sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ;
+  ] .
+
+shape:Journal
+  a sh:NodeShape ;
+  sh:targetClass era:Journal ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path era:journalList ;
+    sh:class era:JournalList ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path era:eraId ;
+    sh:datatype xsd:integer ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path dcterms:title ;
+    sh:description "The journal's title, as the list has it."@en ;
+    sh:datatype xsd:string ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path era:foreignTitle ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path era:multidisciplinary ;
+    sh:datatype xsd:boolean ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path era:rank ;
+    sh:datatype xsd:string ;
+    sh:in ( "A*" "A" "B" "C" ) ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path bibo:issn ;
+    sh:description """An ISSN of the journal, as the list has it: a few are malformed, such as 1463--770, and some
+      have a lower-case x."""@en ;
+    sh:datatype xsd:string ;
+  ] , [
+    sh:path era:fieldOfResearch ;
+    sh:description """Only a warning, as the revised ERA 2023 list gives journal 36264 the code 4709, which ANZSRC
+      2020 does not have."""@en ;
+    sh:class skos:Concept ;
+    sh:severity sh:Warning ;
+  ] .
+
+shape:ConceptScheme
+  a sh:NodeShape ;
+  sh:targetClass skos:ConceptScheme ;
+  sh:description """One ANZSRC classification: the Fields of Research or the Socio-Economic Objectives of ANZSRC 2008
+    or ANZSRC 2020. Its IRI is the one it is published under: by ARDC, under
+    http://purl.org/au-research/vocabulary/, for ANZSRC 2008, and by the ABS and ARDC, under
+    https://linked.data.gov.au/def/, for ANZSRC 2020."""@en ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path dcterms:title ;
+    sh:description "The classification's title, such as ANZSRC 2008 Fields of Research."@en ;
+    sh:datatype rdf:langString ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] .
+
+shape:Concept
+  a sh:NodeShape ;
+  sh:targetClass skos:Concept ;
+  sh:description """One ANZSRC code: a division, a group in it, or a field or objective in that. Its IRI is its
+    classification's followed by its code, such as https://linked.data.gov.au/def/anzsrc-for/2020/4601."""@en ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path skos:inScheme ;
+    sh:description "The classification the code is in."@en ;
+    sh:class skos:ConceptScheme ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path skos:notation ;
+    sh:description "The code, of two digits for a division, four for a group and six for a field or objective."@en ;
+    sh:datatype xsd:string ;
+    sh:pattern "^[0-9]{2}([0-9]{2}){0,2}$" ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path skos:prefLabel ;
+    sh:description "The code's name, as the ABS publishes it."@en ;
+    sh:datatype rdf:langString ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path skos:broader ;
+    sh:description "The code's division, for a group, or its group, for a field or objective."@en ;
+    sh:class skos:Concept ;
+    sh:maxCount 1 ;
+  ] , [
+    sh:path skos:topConceptOf ;
+    sh:description "The classification, for a division, which has no broader code."@en ;
+    sh:class skos:ConceptScheme ;
+    sh:maxCount 1 ;
+  ] .

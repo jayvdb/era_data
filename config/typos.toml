@@ -5,4 +5,5 @@
 # `FoR_1` .. `FoR_3` are the ERA spreadsheets' "Field of Research" column names, which era_journal_list_tidy.xsl
 # reads; typos splits them into "Fo" + "R". Scoped to those column names so a bare "Fo" is still flagged.
 # `FoR` on its own is the ANZSRC abbreviation for Fields of Research, which the README uses.
-extend-ignore-re = ["FoR_[0-9]", "\\bFoR\\b"]
+# `CC BY-NC-ND` and the like are Creative Commons licence names, whose `ND` (NoDerivatives) is not a misspelt "and".
+extend-ignore-re = ["FoR_[0-9]", "\\bCC BY(-[A-Z]{2})+", "\\bFoR\\b"]
