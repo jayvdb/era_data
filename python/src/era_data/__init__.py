@@ -3,6 +3,7 @@
 The data is the triple store published with the era_data release RELEASE: era_data.nt.gz, gzipped N-Triples.
 This package has none of it. On first use, `path()` downloads the file from GitHub, checks it against SHA256 and
 keeps it in `cache_dir()`. Set ERA_DATA_NT to the path of a local copy to use that instead, without a download.
+The download gives up when the server sends nothing for TIMEOUT seconds.
 
     import era_data
 
@@ -16,6 +17,7 @@ import shutil
 import tempfile
 import urllib.request
 import zlib
+from os import PathLike
 from pathlib import Path
 
 import platformdirs
@@ -33,13 +35,17 @@ URL = f"https://github.com/jayvdb/era_data/releases/download/{RELEASE}/{FILE}"
 LOCAL = "ERA_DATA_NT"
 # The environment variable naming the directory to keep downloads in.
 CACHE = "ERA_DATA_CACHE"
+# How many seconds a download waits for the server to connect or send more, before it gives up.
+TIMEOUT = 60
+
+type StrPath = str | PathLike[str]
 
 
 class ChecksumError(ValueError):
     """A downloaded file is not the one the release published."""
 
 
-def cache_dir():
+def cache_dir() -> Path:
     """Return the directory the file is kept in once downloaded.
 
     It is ERA_DATA_CACHE when that is set, and otherwise era_data in the user's cache directory, as platformdirs
@@ -53,7 +59,7 @@ def cache_dir():
     return platformdirs.user_cache_path("era_data", appauthor=False, opinion=False) / RELEASE
 
 
-def sha256(file):
+def sha256(file: StrPath) -> str:
     """Return the SHA-256, in hex, of the N-Triples text in the gzipped file at a path.
 
     The text is what is checked, not the gzip bytes around it, which differ with the zlib that compressed them.
@@ -62,7 +68,7 @@ def sha256(file):
         return hashlib.file_digest(f, "sha256").hexdigest()
 
 
-def cached(file):
+def cached(file: StrPath) -> str | None:
     """Return the checksum of a kept copy of the file, or None when it is not gzip, so that it is downloaded again.
 
     Any other error, such as being unable to read it, is raised.
@@ -73,7 +79,7 @@ def cached(file):
         return None
 
 
-def fetch(url=URL, checksum=SHA256, dest=None):
+def fetch(url: str = URL, checksum: str = SHA256, dest: StrPath | None = None) -> Path:
     """Return the path of the file at url, downloading it to dest unless a copy with that checksum is there already.
 
     dest defaults to FILE in `cache_dir()`. The download goes to a temporary directory beside it, and the file replaces
@@ -88,7 +94,7 @@ def fetch(url=URL, checksum=SHA256, dest=None):
     # A directory rather than a file, as Windows will not rename a file that is still open.
     with tempfile.TemporaryDirectory(dir=dest.parent) as tmp:
         part = Path(tmp) / FILE
-        with urllib.request.urlopen(url) as response, open(part, "wb") as f:
+        with urllib.request.urlopen(url, timeout=TIMEOUT) as response, open(part, "wb") as f:
             shutil.copyfileobj(response, f)
         if (actual := sha256(part)) != checksum:
             raise ChecksumError(f"{url} has SHA-256 {actual}, not {checksum}")
@@ -96,20 +102,20 @@ def fetch(url=URL, checksum=SHA256, dest=None):
     return dest
 
 
-def path():
+def path() -> Path:
     """Return the path of the file: ERA_DATA_NT when that is set, or else the release's file, downloaded if need be."""
     if local := os.environ.get(LOCAL):
         return Path(local)
     return fetch()
 
 
-def ntriples(source=None):
+def ntriples(source: StrPath | None = None) -> str:
     """Return the whole triple store as N-Triples text, from source or, by default, `path()`."""
     with gzip.open(source or path(), "rt", encoding="ascii") as f:
         return f.read()
 
 
-def graph(source=None):
+def graph(source: StrPath | None = None) -> rdflib.Graph:
     """Return the whole triple store as an rdflib.Graph, from source or, by default, `path()`."""
     result = rdflib.Graph()
     with gzip.open(source or path(), "rb") as f:

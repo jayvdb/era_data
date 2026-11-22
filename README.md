@@ -41,7 +41,7 @@ research and rank, and each conference's title, acronym, fields of research and 
 original files, are published as a SQLite database and an RDF triple store on this repository's GitHub releases,
 described under Releases below.
 
-All files stored in this repository are available under the MIT license.
+All files stored in this repository are available under the MIT license, in [LICENSE](LICENSE).
 
 ## Data sources
 
