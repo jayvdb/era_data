@@ -16,3 +16,7 @@ git+https://github.com/toirl/pytest-sqlalchemy
 psycopg[binary]
 pymysql
 oracledb
+
+# The triple store's vocabulary: vocab_md.py reads it with rdflib, and era_shacl.py validates against its shapes.
+pyshacl
+rdflib

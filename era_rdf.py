@@ -8,7 +8,8 @@ character written as an N-Triples Unicode escape, and the gzip header has no nam
 
 The ANZSRC codes are SKOS concepts under the IRIs their publishers use: linked.data.gov.au's for ANZSRC 2020,
 which the ABS and ARDC publish, and ARDC's purl.org vocabularies for ANZSRC 2008.
-The journal lists and journals are under NAMESPACE, with the terms of this repository's own vocabulary in VOCAB.
+The journal lists and journals are under NAMESPACE, with the terms of this repository's own vocabulary in VOCAB,
+which vocab/vocab.ttl defines and VOCAB.md describes.
 """
 
 import gzip
@@ -35,16 +36,17 @@ SCHEMES = {
     "anzsrc2020_seo": ("https://linked.data.gov.au/def/anzsrc-seo/2020/", "ANZSRC 2020 Socio-Economic Objectives"),
 }
 
-# Each journal list, by the prefix of its tables, with its title. They all assign ANZSRC 2008 codes.
+# Each journal list, by the prefix of its tables, with its title and the ANZSRC table its fields of research are in.
 LISTS = {
-    "era2010": "ERA 2010 journal list",
-    "era2012": "ERA 2012 journal list",
-    "era2015": "ERA 2015 journal list",
-    "era2015c": "ERA 2015 consultation journal list",
-    "era2015s": "ERA 2015 submitted journal list",
-    "era2018": "ERA 2018 journal list",
+    "era2010": ("ERA 2010 journal list", "anzsrc2008_for"),
+    "era2012": ("ERA 2012 journal list", "anzsrc2008_for"),
+    "era2015": ("ERA 2015 journal list", "anzsrc2008_for"),
+    "era2015c": ("ERA 2015 consultation journal list", "anzsrc2008_for"),
+    "era2015s": ("ERA 2015 submitted journal list", "anzsrc2008_for"),
+    "era2018": ("ERA 2018 journal list", "anzsrc2008_for"),
+    "era2023": ("ERA 2023 revised journal list", "anzsrc2020_for"),
+    "era2023o": ("ERA 2023 original journal list", "anzsrc2020_for"),
 }
-LIST_FOR = "anzsrc2008_for"
 
 
 def iri(value):
@@ -111,7 +113,9 @@ def journals(db, prefix):
     """Yield the triples of one journal list and its journals."""
     journal_list = iri(NAMESPACE + prefix)
     yield journal_list, iri(RDF_TYPE), iri(VOCAB + "JournalList")
-    yield journal_list, iri(DCTERMS_TITLE), literal(LISTS[prefix], language="en")
+    title, fields = LISTS[prefix]
+    yield journal_list, iri(DCTERMS_TITLE), literal(title, language="en")
+    yield journal_list, iri(VOCAB + "fieldOfResearchScheme"), iri(SCHEMES[fields][0].rstrip("/"))
 
     def journal(eraid):
         return iri(f"{NAMESPACE}{prefix}/journal/{eraid}")
@@ -131,7 +135,7 @@ def journals(db, prefix):
     for eraid, issn in db.execute(f"select eraid, issn from {prefix}_journal_issn"):
         yield journal(eraid), iri(BIBO_ISSN), literal(issn)
     for eraid, discipline in db.execute(f"select eraid, discipline from {prefix}_journal_for"):
-        yield journal(eraid), iri(VOCAB + "fieldOfResearch"), iri(concept(LIST_FOR, discipline))
+        yield journal(eraid), iri(VOCAB + "fieldOfResearch"), iri(concept(fields, discipline))
 
 
 def lines(db):

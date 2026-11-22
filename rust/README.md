@@ -1,7 +1,7 @@
 # era_data
 
-The Excellence in Research for Australia (ERA) journal lists of 2010, 2012, 2015 and 2018, and the ANZSRC 2008 and 2020
-Fields of Research and Socio-Economic Objectives, as one RDF graph.
+The Excellence in Research for Australia (ERA) journal lists of 2010, 2012, 2015, 2018 and 2023, and the ANZSRC 2008
+and 2020 Fields of Research and Socio-Economic Objectives, as one RDF graph.
 
 ```rust,no_run
 let graph = era_data::graph()?; // an oxrdf::Graph of every triple
@@ -24,4 +24,11 @@ ISSNs and, in ERA 2010, its rank. It defaults to ERA ID 4465, IEEE Transactions 
 cargo run --release --example journal_history -- 4465
 ```
 
-The repository's README describes the data and its vocabulary.
+The repository's README describes the data, and its
+[VOCAB.md](https://github.com/jayvdb/era_data/blob/master/VOCAB.md) the vocabulary.
+
+## Copyright
+
+The data comes from the Australian Research Council and the Australian Bureau of Statistics. The
+[Copyright section](https://github.com/jayvdb/era_data#copyright) of the repository's README describes the terms
+each was published under.

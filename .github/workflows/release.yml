@@ -14,7 +14,7 @@ jobs:
   release:
     name: Build and attach the data file
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     # The release itself needs write access to the repository's contents; only this job has it.
     permissions:
       contents: write
@@ -34,7 +34,8 @@ jobs:
           cache: false
           install_args: python uv conda:sqlite
 
-      # Downloads the sources afresh, runs the whole pipeline and its tests against SQLite, and writes the bundle.
+      # Downloads the sources afresh, runs the whole pipeline and its tests against SQLite, validates the triple store
+      # against its SHACL shapes, and writes the bundle.
       - name: Build the data file
         run: mise run release
 

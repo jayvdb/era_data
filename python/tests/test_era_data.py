@@ -28,7 +28,7 @@ def test_pinned_checksum():
 
 
 def test_triple_count(graph):
-    assert len(graph) == 1119923
+    assert len(graph) == 1562967
 
 
 def test_journal(graph):
@@ -66,8 +66,16 @@ def test_journal_history_example(graph):
         "ERA 2015 journal list",
         "ERA 2015 submitted journal list",
         "ERA 2018 journal list",
+        "ERA 2023 original journal list",
+        "ERA 2023 revised journal list",
     ]
     first, last = entries["ERA 2010 journal list"], entries["ERA 2018 journal list"]
+    # ERA 2023 assigns ANZSRC 2020 groups.
+    assert entries["ERA 2023 revised journal list"]["fields"] == [
+        ("4602", "Artificial intelligence"),
+        ("4603", "Computer vision and multimedia computation"),
+        ("4611", "Machine learning"),
+    ]
     assert first["title"] == "IEEE Transactions on Systems, Man and Cybernetics, Part B: Cybernetics"
     assert first["rank"] == "A"
     assert [code for code, _ in first["fields"]] == ["08", "09", "17"]
@@ -86,7 +94,7 @@ def test_journal_history_example(graph):
 def test_ntriples_is_ascii():
     text = era_data.ntriples()
     assert text.isascii()
-    assert text.count("\n") == 1119923
+    assert text.count("\n") == 1562967
 
 
 def test_fetch_downloads_and_caches(tmp_path):

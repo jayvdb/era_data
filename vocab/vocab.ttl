@@ -1,0 +1,85 @@
+# The era_data vocabulary: the classes and properties era_rdf.py writes the journal lists with.
+# vocab_md.py writes VOCAB.md from this file and shapes.ttl.
+
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix era: <https://jayvdb.github.io/era_data/vocab#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://jayvdb.github.io/era_data/vocab>
+  a owl:Ontology ;
+  dcterms:title "era_data vocabulary"@en ;
+  dcterms:description """The terms the era_data triple store describes the Excellence in Research for Australia
+    (ERA) journal lists with. Each journal list is a JournalList, and each journal on it a Journal of that list
+    alone: a journal on several lists has an entry on each, which share its ERA ID. The ANZSRC codes are SKOS
+    concepts under the IRIs their publishers use, and the journals' titles and ISSNs are Dublin Core and BIBO
+    terms."""@en ;
+  rdfs:seeAlso <https://github.com/jayvdb/era_data> .
+
+era:JournalList
+  a owl:Class ;
+  rdfs:label "Journal list"@en ;
+  rdfs:comment """One ERA journal list, as the Australian Research Council published it. Its IRI is
+    https://jayvdb.github.io/era_data/ followed by the prefix of its tables: era2010, era2012, era2015, era2015c
+    (the ERA 2015 consultation list), era2015s (the ERA 2015 submitted list), era2018, era2023 (the revised ERA 2023
+    list) and era2023o (the ERA 2023 list as first published)."""@en .
+
+era:Journal
+  a owl:Class ;
+  rdfs:label "Journal"@en ;
+  rdfs:comment """A journal as one journal list has it. Its IRI is its list's, followed by /journal/ and its ERA ID,
+    such as https://jayvdb.github.io/era_data/era2010/journal/11637."""@en .
+
+era:fieldOfResearchScheme
+  a owl:ObjectProperty ;
+  rdfs:label "field of research scheme"@en ;
+  rdfs:comment """The ANZSRC Fields of Research edition whose codes the list assigns its journals: ANZSRC 2008 for
+    the lists of ERA 2010 to 2018, and ANZSRC 2020 for the ERA 2023 lists."""@en ;
+  rdfs:domain era:JournalList ;
+  rdfs:range skos:ConceptScheme .
+
+era:journalList
+  a owl:ObjectProperty ;
+  rdfs:label "journal list"@en ;
+  rdfs:comment "The journal list the journal is on."@en ;
+  rdfs:domain era:Journal ;
+  rdfs:range era:JournalList .
+
+era:eraId
+  a owl:DatatypeProperty ;
+  rdfs:label "ERA ID"@en ;
+  rdfs:comment """The ERA journal ID the list gives the journal. The lists keep a journal's ID from one to the next,
+    so it is what links a journal's entries on different lists."""@en ;
+  rdfs:domain era:Journal ;
+  rdfs:range xsd:integer .
+
+era:foreignTitle
+  a owl:DatatypeProperty ;
+  rdfs:label "foreign title"@en ;
+  rdfs:comment "The journal's title in another language, where the list gives one besides its title."@en ;
+  rdfs:domain era:Journal ;
+  rdfs:range xsd:string .
+
+era:multidisciplinary
+  a owl:DatatypeProperty ;
+  rdfs:label "multidisciplinary"@en ;
+  rdfs:comment "Whether the list marks the journal MD, multidisciplinary."@en ;
+  rdfs:domain era:Journal ;
+  rdfs:range xsd:boolean .
+
+era:rank
+  a owl:DatatypeProperty ;
+  rdfs:label "rank"@en ;
+  rdfs:comment "The journal's rank. Only the ERA 2010 list ranked journals, and it left some unranked."@en ;
+  rdfs:domain era:Journal ;
+  rdfs:range xsd:string .
+
+era:fieldOfResearch
+  a owl:ObjectProperty ;
+  rdfs:label "field of research"@en ;
+  rdfs:comment """A field of research the list assigns the journal: a division or group of the list's
+    fieldOfResearchScheme."""@en ;
+  rdfs:domain era:Journal ;
+  rdfs:range skos:Concept .

@@ -16,7 +16,7 @@ from rdflib.namespace import DCTERMS, SKOS, XSD
 VOCAB = rdflib.Namespace("https://jayvdb.github.io/era_data/vocab#")
 BIBO_ISSN = rdflib.URIRef("http://purl.org/ontology/bibo/issn")
 
-# IEEE Transactions on Cybernetics: renamed, assigned divisions, then MD, then groups, and given more ISSNs.
+# IEEE Transactions on Cybernetics: renamed, and given divisions, MD, then 2008 and 2020 groups, and more ISSNs.
 DEFAULT = 4465
 
 
