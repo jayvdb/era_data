@@ -1,0 +1,4 @@
+# The Rust workspace: its Cargo.lock, rustfmt.toml and target/ are here at the top level, and its crates under it.
+[workspace]
+members = ["rust"]
+resolver = "3"

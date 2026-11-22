@@ -54,9 +54,9 @@ editorconfig-checker = "latest"
 # pyexcel and dicttoxml run on current CPython.
 python = "3.14"
 ruff = "latest"
-# The Rust toolchain cargo:ryl builds with on macOS x86_64, for that platform alone.
-# The `minimal` profile leaves out the docs and components that build never uses.
-rust = { version = "stable", os = ["macos/x64"], profile = "minimal" }
+# The Rust toolchain the rust/ crate builds with, and cargo:ryl on macOS x86_64.
+# The `minimal` profile leaves out the docs, and the crate's checks need only clippy and rustfmt besides.
+rust = { version = "stable", profile = "minimal", components = "clippy,rustfmt" }
 # actionlint runs shellcheck over the workflows' `run:` steps.
 shellcheck = "latest"
 taplo = "latest"
@@ -84,15 +84,18 @@ PGHOST = "127.0.0.1"
 PGPORT = "{{ get_env(name='PGPORT', default='55432') }}"
 PGUSER = "postgres"
 # SQLAlchemy URL the tests connect to $DB with.
-DBURL = """\
+# The `-` in each tag trims the line breaks around it, so the value is the URL alone.
+DBURL = """
 {%- set db = get_env(name='DB', default='sqlite3') -%}
-{%- if db == 'pgsql' %}postgresql+psycopg://postgres@127.0.0.1:\
-{{ get_env(name='PGPORT', default='55432') }}/era_data
-{%- elif db == 'mysql' %}mysql+pymysql://root@127.0.0.1:\
-{{ get_env(name='MYSQL_TCP_PORT', default='53306') }}/era_data?charset=utf8mb4
-{%- elif db == 'oracle' %}oracle+oracledb://era_data:era_data@localhost:\
-{{ get_env(name='ORACLE_PORT', default='1521') }}/?service_name=FREEPDB1
-{%- else %}sqlite:///build/sqlite3/era_data.sqlite{% endif -%}"""
+{%- set pg = get_env(name='PGPORT', default='55432') -%}
+{%- set my = get_env(name='MYSQL_TCP_PORT', default='53306') -%}
+{%- set ora = get_env(name='ORACLE_PORT', default='1521') -%}
+{%- if db == 'pgsql' -%}postgresql+psycopg://postgres@127.0.0.1:{{ pg }}/era_data
+{%- elif db == 'mysql' -%}mysql+pymysql://root@127.0.0.1:{{ my }}/era_data?charset=utf8mb4
+{%- elif db == 'oracle' -%}oracle+oracledb://era_data:era_data@localhost:{{ ora }}/?service_name=FREEPDB1
+{%- else -%}sqlite:///build/sqlite3/era_data.sqlite
+{%- endif -%}
+"""
 
 [vars]
 # The shell every task runs in: the bodies are POSIX shell, which on Windows is Git Bash's.
@@ -115,16 +118,25 @@ run = "uv pip install -r requirements.txt"
 shell = "{{ vars.shell }}"
 
 [tasks.download]
-description = "Download the tech packs and journal lists from the Internet Archive into build/downloads/"
+description = "Download the ERA tech packs and journal lists and the ANZSRC classifications into build/downloads/"
 run = """
 mkdir -p build/downloads
 wayback=https://web.archive.org/web
 arc=www.arc.gov.au
 acu=www.acu.edu.au/__data/assets/excel_doc
 arc_era=$arc/sites/default/files/filedepot/Public/ERA
+abs2008=http://www.ausstats.abs.gov.au/ausstats/subscriber.nsf/0
+abs2020=https://www.abs.gov.au/statistics/classifications
+abs2020=$abs2020/australian-and-new-zealand-standard-research-classification-anzsrc/2020
+# The ABS 2008 files, each under the document ID that the ABS file store keeps it in.
+# Single quotes keep `$File`, which is part of each URL.
+corr2008='0547F1ACF1FCAF93CA2574320012F0DC/$File/1297.0%20correspondence%20tables.xls'
+fos2008='FC837D3FBE9EAFEACA257585001D7C72/$File/12970%20(2008)%20FOS%20(2007)%20Correspondence%20Table.xls'
+nabs2008='5C5DE1F0FECC817CCA257585001BA569/$File/12970%20(2008)%20NABS%20(2007)%20Correspondence%20Table.xls'
 while read -r url; do
   [ -n "$url" ] || continue
-  file="build/downloads/${url##*/}"
+  # Saved under the end of the URL, with each encoded space made an underscore and parentheses dropped.
+  file="build/downloads/$(printf '%s' "${url##*/}" | sed 's/%20/_/g;s/[()]//g')"
   if [ ! -s "$file" ]; then
     curl -fsSL --retry 5 --retry-all-errors -o "$file.part" "$url"
     mv "$file.part" "$file"
@@ -136,6 +148,11 @@ $wayback/20140212022205/http://$arc/xls/era12/ERA2012JournalList.xlsx
 $wayback/20160505174054/https://$acu/0003/674283/ERA_2015_Submission_Journal_List.xlsx
 $wayback/20150921024910/https://tqft.net/math/ERA2015.csv
 $wayback/20160318210634/https://$arc_era/ERA%202015/ERA2015_Submitted_Journal_ListV2.xlsx
+$wayback/20101113155507id_/$abs2008/$corr2008
+$wayback/20140217035128id_/$abs2008/$fos2008
+$wayback/20140217035130id_/$abs2008/$nabs2008
+$wayback/20210829220431id_/$abs2020/anzsrc2020_for.xlsx
+$wayback/20210829220425id_/$abs2020/anzsrc2020_seo.xlsx
 EOF
 """
 shell = "{{ vars.shell }}"
@@ -146,6 +163,10 @@ shell = "{{ vars.shell }}"
 #   Its conference list, ERA_2015_Submission_Conference_List.xlsx, is beside it under 0004/674284/, at 20160505180743.
 # - ERA2015.csv is the 2015 consultation journal list from http://jacci.arc.gov.au/, kindly provided by
 #   https://sbseminar.wordpress.com/2014/02/24/australian-research-council-journal-list/
+# - The last five are the ABS's Australian and New Zealand Standard Research Classification (ANZSRC), cat. no. 1297.0.
+#   ERA 2010 to ERA 2018 used ANZSRC 2008, and ERA 2023 ANZSRC 2020; anzsrc_sql.py describes each file.
+#   The 2020 snapshots are of the release of 30 June 2020, which the ABS has since replaced with corrected labels.
+#   `id_` has the Internet Archive serve each of them exactly as archived.
 
 [tasks.extract]
 depends = ["download"]
@@ -201,10 +222,10 @@ outputs = [
   "build/ERA2015_submitted_journal_title_list.xml",
 ]
 run = """
-lxmlproc --output build/ERA2010_journal_title_list.xml era_journal_list_2010_tidy.xsl \\
-  build/downloads/ERA2010_tech_pack/code-table/XML-Format/ERA2010_journal_title_list.xml
-lxmlproc --output build/ERA2015_journal_title_list.xml era_journal_list_2010_tidy.xsl \\
-  build/ERA2015JournalList.xml
+xsl=era_journal_list_2010_tidy.xsl
+era2010=build/downloads/ERA2010_tech_pack/code-table/XML-Format/ERA2010_journal_title_list.xml
+lxmlproc --output build/ERA2010_journal_title_list.xml "$xsl" "$era2010"
+lxmlproc --output build/ERA2015_journal_title_list.xml "$xsl" build/ERA2015JournalList.xml
 cp build/ERA2012JournalList.xml build/ERA2012_journal_title_list.xml
 cp build/ERA2015JournalList_consultation.xml build/ERA2015_consultation_journal_title_list.xml
 cp build/ERA2015JournalList_submitted.xml build/ERA2015_submitted_journal_title_list.xml
@@ -217,15 +238,13 @@ sources = [
 ]
 
 [tasks.schema]
-description = "Write a $DBDIR/schema<year>.sql per journal list, with the tables prefixed and types adjusted for $DB"
+description = "Write the $DBDIR/schema*.sql for each journal list and ANZSRC edition, with types adjusted for $DB"
 # MySQL 8 reserves RANK, so the rank column is quoted there.
 run = """
 mkdir -p "$DBDIR"
-while read -r stem prefix; do
-  [ -n "$stem" ] || continue
-  out="$DBDIR/schema${stem#ERA}"
-  out="${out%_journal_title_list}.sql"
-  sed -E "s/(^CREATE TABLE|REFERENCES|CONSTRAINT) journal([_ ])/\\1 ${prefix}_journal\\2/g" schema.sql |
+# Renames the tables of the schema in $1 from $2 to $3, and adjusts the column types for $DB.
+schema() {
+  sed -E "s/(^CREATE TABLE|REFERENCES|CONSTRAINT) $2([_ ])/\\1 $3\\2/g" "$1" |
     case "$DB" in
     mysql)
       sed -E 's/n?varchar2\\((1?[0-9][0-9]?)\\)/varchar(\\1)/;s/n?varchar2\\(([0-9]+)\\)/text(\\1)/' |
@@ -233,16 +252,28 @@ while read -r stem prefix; do
       ;;
     pgsql) sed -E 's/n?varchar2\\(([0-9]+)\\)/varchar(\\1)/' ;;
     *) cat ;;
-    esac >"$out"
+    esac
+}
+while read -r stem prefix; do
+  [ -n "$stem" ] || continue
+  out="$DBDIR/schema${stem#ERA}"
+  out="${out%_journal_title_list}.sql"
+  schema schema.sql journal "${prefix}_journal" >"$out"
 done <<'EOF'
 {{ vars.lists }}
 EOF
+# Each ANZSRC edition has a table for its Fields of Research and one for its Socio-Economic Objectives.
+for edition in 2008 2020; do
+  for classification in for seo; do
+    schema anzsrc_schema.sql anzsrc "anzsrc${edition}_$classification"
+  done >"$DBDIR/schema_anzsrc$edition.sql"
+done
 """
 shell = "{{ vars.shell }}"
 
 [tasks.sql]
-depends = ["deps", "xml"]
-description = "Convert each journal list to SQL insert statements for $DB"
+depends = ["deps", "download", "xml"]
+description = "Convert each journal list and ANZSRC edition to SQL insert statements for $DB"
 run = """
 mkdir -p "$DBDIR"
 while read -r stem prefix; do
@@ -251,6 +282,9 @@ while read -r stem prefix; do
 done <<'EOF'
 {{ vars.lists }}
 EOF
+for edition in 2008 2020; do
+  python anzsrc_sql.py "$edition" build/downloads "$DB" >"$DBDIR/anzsrc$edition.sql"
+done
 """
 shell = "{{ vars.shell }}"
 
@@ -269,8 +303,8 @@ pgsql)
     # On Windows the server inherits pg_ctl's stdout and stderr, which are the pipe mise reads this task from.
     # The server holds it open, so mise waits on it for as long as the server runs, and the job times out.
     # Pointing pg_ctl's own streams at a file instead leaves the server nothing of mise's to hold.
-    if ! pg_ctl start -w -D "$DBDIR/data" -l "$DBDIR/server.log" -o "-p $PGPORT" \\
-      </dev/null >"$DBDIR/pg_ctl.log" 2>&1; then
+    set -- -w -D "$DBDIR/data" -l "$DBDIR/server.log" -o "-p $PGPORT"
+    if ! pg_ctl start "$@" </dev/null >"$DBDIR/pg_ctl.log" 2>&1; then
       cat "$DBDIR/pg_ctl.log" "$DBDIR/server.log" >&2
       exit 1
     fi
@@ -282,8 +316,8 @@ mysql)
   # mise runs mysqld through a wrapper script, so it cannot find its own plugins without being told where they are.
   # conda keeps them in lib/plugin, or Library/lib/plugin on Windows.
   plugin=$(find "$(mise where conda:mysql-server)" -name 'component_reference_cache.*' | head -n 1)
-  set -- --no-defaults --datadir="$(native "$PWD/$DBDIR/data")" --log-error="$(native "$PWD/$DBDIR/server.log")" \\
-    --plugin-dir="$(native "$(dirname "$plugin")")"
+  set -- --no-defaults --datadir="$(native "$PWD/$DBDIR/data")" --log-error="$(native "$PWD/$DBDIR/server.log")"
+  set -- "$@" --plugin-dir="$(native "$(dirname "$plugin")")"
   if [ ! -d "$DBDIR/data" ]; then
     mkdir -p "$DBDIR"
     mysqld "$@" --initialize-insecure
@@ -301,8 +335,9 @@ mysql)
     fi
   else
     # Windows has no --daemonize, so mysqld goes in the background everywhere, and the task waits for it.
-    nohup mysqld "$@" --bind-address=127.0.0.1 --port="$MYSQL_TCP_PORT" --mysqlx=OFF \\
-      --socket="$(native "$PWD/$DBDIR/mysql.sock")" --pid-file="$(native "$PWD/$DBDIR/mysqld.pid")" >/dev/null 2>&1 &
+    set -- "$@" --bind-address=127.0.0.1 --port="$MYSQL_TCP_PORT" --mysqlx=OFF
+    set -- "$@" --socket="$(native "$PWD/$DBDIR/mysql.sock")" --pid-file="$(native "$PWD/$DBDIR/mysqld.pid")"
+    nohup mysqld "$@" >/dev/null 2>&1 &
     tries=0
     until mysqladmin -h 127.0.0.1 -P "$MYSQL_TCP_PORT" -u root ping >/dev/null 2>&1; do
       tries=$((tries + 1))
@@ -320,8 +355,9 @@ oracle)
   if docker container inspect "$ORACLE_CONTAINER" >/dev/null 2>&1; then
     docker start "$ORACLE_CONTAINER" >/dev/null
   else
-    docker run -d --name "$ORACLE_CONTAINER" -p "127.0.0.1:$ORACLE_PORT:1521" -e ORACLE_RANDOM_PASSWORD=yes \\
-      -e APP_USER=era_data -e APP_USER_PASSWORD=era_data gvenzl/oracle-free:23-slim-faststart >/dev/null
+    set -- -d --name "$ORACLE_CONTAINER" -p "127.0.0.1:$ORACLE_PORT:1521"
+    set -- "$@" -e ORACLE_RANDOM_PASSWORD=yes -e APP_USER=era_data -e APP_USER_PASSWORD=era_data
+    docker run "$@" gvenzl/oracle-free:23-slim-faststart >/dev/null
   fi
   tries=0
   until docker exec "$ORACLE_CONTAINER" healthcheck.sh >/dev/null 2>&1; do
@@ -384,8 +420,8 @@ case "$DB" in
 sqlite3) mkdir -p "$DBDIR" && rm -f "$DBDIR/$DBNAME.sqlite" ;;
 pgsql) dropdb --if-exists "$DBNAME" && createdb "$DBNAME" ;;
 mysql)
-  mysql -h 127.0.0.1 -P "$MYSQL_TCP_PORT" -u root \\
-    -e "DROP DATABASE IF EXISTS $DBNAME; CREATE DATABASE $DBNAME CHARACTER SET utf8mb4;"
+  sql="DROP DATABASE IF EXISTS $DBNAME; CREATE DATABASE $DBNAME CHARACTER SET utf8mb4;"
+  mysql -h 127.0.0.1 -P "$MYSQL_TCP_PORT" -u root -e "$sql"
   ;;
 oracle)
   docker exec -i "$ORACLE_CONTAINER" sqlplus -s -l era_data/era_data@FREEPDB1 <<'EOF'
@@ -405,7 +441,7 @@ shell = "{{ vars.shell }}"
 
 [tasks."db:load"]
 depends = ["db:create", "schema", "sql"]
-description = "Create the tables and load the journal lists into the $DB database"
+description = "Create the tables and load the journal lists and ANZSRC classifications into the $DB database"
 run = """
 # Runs a SQL script with the selected database's command-line client, as one transaction.
 # The data scripts are one INSERT per row, and committing each row on its own takes hours.
@@ -426,7 +462,9 @@ sqlcmd() {
     ;;
   esac
 }
-for f in "$DBDIR"/schema201*.sql "$DBDIR"/ERA201*_journal_title_list.sql; do sqlcmd "$f"; done
+# The tables first, then the data.
+for f in "$DBDIR"/schema201*.sql "$DBDIR"/schema_anzsrc*.sql; do sqlcmd "$f"; done
+for f in "$DBDIR"/ERA201*_journal_title_list.sql "$DBDIR"/anzsrc20*.sql; do sqlcmd "$f"; done
 """
 shell = "{{ vars.shell }}"
 
@@ -434,7 +472,7 @@ shell = "{{ vars.shell }}"
 alias = "default"
 depends = ["db:load", "deps"]
 description = "Test the loaded $DB database with pytest"
-run = 'pytest -o cache_dir=build/.pytest_cache --sqlalchemy-connect-url="$DBURL"'
+run = 'pytest -o cache_dir=build/.pytest_cache --sqlalchemy-connect-url="$DBURL" tests'
 shell = "{{ vars.shell }}"
 
 # One task per database, each running the whole pipeline with DB set for it.
@@ -469,10 +507,17 @@ description = "Run the pipeline and the tests against every database, one after 
 run = ["mise run test:mysql", "mise run test:oracle", "mise run test:pgsql", "mise run test:sqlite3"]
 shell = "{{ vars.shell }}"
 
-[tasks.release]
+[tasks.rdf]
 depends = ["test:sqlite3"]
-description = "Write build/release/era_data.sqlite.gz, every journal list in one SQLite database, and its checksum"
-# The release is the data this pipeline produces, in one tested file that any language can read.
+description = "Write build/era_data.nt.gz, the whole tested SQLite database as gzipped N-Triples"
+run = "python era_rdf.py build/sqlite3/era_data.sqlite build/era_data.nt.gz"
+shell = "{{ vars.shell }}"
+
+[tasks.release]
+depends = ["rdf"]
+description = "Write the release's files into build/release/: the database as SQLite and as N-Triples, with checksums"
+# The release is the data this pipeline produces, in tested files that any language can read: era_data.sqlite.gz,
+# and era_data.nt.gz, the triple store the python/ and rust/ packages download.
 # None of the government's original files go in it.
 # VACUUM INTO writes a compacted copy, and gzip -n leaves out the name and time, so the same data gives the same file.
 run = """
@@ -480,14 +525,50 @@ rm -rf build/release
 mkdir -p build/release
 sqlite3 build/sqlite3/era_data.sqlite "VACUUM INTO 'build/release/era_data.sqlite'"
 gzip -9 -n build/release/era_data.sqlite
+cp build/era_data.nt.gz build/release/
 cd build/release
-if command -v sha256sum >/dev/null; then
-  sha256sum era_data.sqlite.gz >era_data.sqlite.gz.sha256
-else
-  shasum -a 256 era_data.sqlite.gz >era_data.sqlite.gz.sha256
-fi
+for f in era_data.sqlite.gz era_data.nt.gz; do
+  if command -v sha256sum >/dev/null; then
+    sha256sum "$f" >"$f.sha256"
+  else
+    shasum -a 256 "$f" >"$f.sha256"
+  fi
+done
 """
 shell = "{{ vars.shell }}"
+
+[tasks.pin]
+depends = ["rdf"]
+description = "Pin the python/ and rust/ packages to the release $TAG and the checksum of build/era_data.nt.gz"
+# Run before pushing a data-v* tag, and commit the result: the release workflow refuses to publish otherwise.
+run = """
+: "${TAG:?set TAG to the release tag, such as data-v3}"
+python pin.py "$TAG" build/era_data.nt.gz
+"""
+shell = "{{ vars.shell }}"
+
+# The packages' tests read build/era_data.nt.gz rather than downloading the release's file.
+[tasks."test:python"]
+depends = ["deps", "rdf"]
+description = "Test the python/ package against build/era_data.nt.gz"
+env = { ERA_DATA_NT = "{{ config_root }}/build/era_data.nt.gz" }
+run = """
+uv pip install -e './python[test]'
+pytest -o cache_dir=build/.pytest_cache python/tests
+"""
+shell = "{{ vars.shell }}"
+
+[tasks."test:rust"]
+depends = ["rdf"]
+description = "Test the rust/ crate against build/era_data.nt.gz"
+env = { ERA_DATA_NT = "{{ config_root }}/build/era_data.nt.gz" }
+# --release, as an unoptimised build takes minutes to parse the 900,000 triples.
+run = "cargo test --workspace --release"
+shell = "{{ vars.shell }}"
+
+[tasks."test:packages"]
+depends = ["test:python", "test:rust"]
+description = "Test the python/ and rust/ packages"
 
 [tasks.clean]
 depends = ["db:stop"]
@@ -561,6 +642,14 @@ fi
 """
 shell = "{{ vars.shell }}"
 
+[tasks.cargo-fmt-check]
+run = "cargo fmt --all --check"
+shell = "{{ vars.shell }}"
+
+[tasks.cargo-clippy-check]
+run = "cargo clippy --workspace --all-targets -- -D warnings"
+shell = "{{ vars.shell }}"
+
 [tasks.pyrefly-check]
 run = "pyrefly check -c config/pyrefly.toml"
 shell = "{{ vars.shell }}"
@@ -601,6 +690,8 @@ depends = [
   "action-validator-check",
   "actionlint-check",
   "agent-lint-check",
+  "cargo-clippy-check",
+  "cargo-fmt-check",
   "editorconfig-check",
   "gha-uses-check",
   "pyrefly-check",

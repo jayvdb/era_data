@@ -1,0 +1,9 @@
+rules:
+  - id: no-trailing-backslash
+    languages: [generic]
+    pattern-regex: '\\[ \t]*$'
+    message: >-
+      Trailing-backslash line continuations are not allowed in this repo.
+      Keep it on one line, or split it so that no line needs one: shell variables or `set -- "$@" ...` in a mise task
+      body, Tera `set` tags in a mise value, a `|` block scalar in YAML, or parentheses in Python.
+    severity: ERROR

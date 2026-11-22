@@ -1,0 +1,21 @@
+[package]
+categories = ["science"]
+description = "The ERA journal lists and the ANZSRC classifications, as an RDF graph"
+edition = "2024"
+keywords = ["anzsrc", "australia", "rdf", "research"]
+license = "MIT"
+name = "era_data"
+readme = "README.md"
+repository = "https://github.com/jayvdb/era_data"
+rust-version = "1.87"
+version = "0.1.0"
+
+[dependencies]
+dirs = "7"
+flate2 = "1"
+hex = "0.4"
+oxrdf = "0.3"
+oxttl = "0.2"
+sha2 = "0.11"
+tempfile = "3"
+ureq = "3"

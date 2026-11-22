@@ -107,3 +107,19 @@ def test_2015_submission_journal_for_count(connection):
     query = select(func.count(era2015_journal_for.columns.eraid))
     result = connection.execute(query).scalar()
     assert result == 27820
+
+
+def test_2010_rank_counts(connection):
+    """ERA 2010 is the only list with ranks; its 279 "Not ranked" journals have none."""
+    era2010_journals = Table("era2010_journal", metadata, autoload_with=connection)
+    rank = era2010_journals.columns.rank
+    query = select(rank, func.count()).group_by(rank)
+    result = {(value or "").strip(): count for value, count in connection.execute(query)}
+    assert result == {"A*": 1030, "A": 3054, "B": 5667, "C": 10682, "": 279}
+
+
+def test_later_lists_have_no_ranks(connection):
+    for prefix in ("era2012", "era2015", "era2015c", "era2015s"):
+        journals = Table(f"{prefix}_journal", metadata, autoload_with=connection)
+        query = select(func.count()).select_from(journals).where(journals.columns.rank.is_not(None))
+        assert connection.execute(query).scalar() == 0, prefix

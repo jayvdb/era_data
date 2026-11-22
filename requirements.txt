@@ -2,6 +2,7 @@
 # so they are pinned and upgraded together; .github/dependabot.yml groups them into one pull request.
 pyexcel==0.7.6
 pyexcel-io==0.6.8
+pyexcel-xls==0.7.1
 pyexcel-xlsx==0.6.1
 
 dicttoxml

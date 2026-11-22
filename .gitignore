@@ -7,3 +7,6 @@ schema201*.sql
 era_data.sqlite*
 *.pyc
 *~
+target/
+dist/
+*.egg-info/

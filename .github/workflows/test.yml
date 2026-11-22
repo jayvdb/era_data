@@ -43,7 +43,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: build/downloads
-          key: era-downloads-v1
+          key: era-downloads-v2
 
       # Installs mise and every tool in mise.toml.
       # GITHUB_TOKEN raises the api.github.com rate limit that mise's version lookups draw on.
@@ -55,3 +55,31 @@ jobs:
         env:
           DB: ${{ matrix.db }}
         run: mise run "test:$DB"
+
+  packages:
+    name: packages on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # The same downloads as the test job, under the same key.
+      - name: Cache the downloads
+        uses: actions/cache@v6
+        with:
+          path: build/downloads
+          key: era-downloads-v2
+
+      - uses: jdx/mise-action@v5
+        with:
+          github_token: ${{ github.token }}
+
+      # Builds the triple store from the SQLite pipeline, then tests the python/ and rust/ packages against it.
+      - name: Test the packages
+        run: mise run test:packages
