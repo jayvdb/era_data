@@ -630,6 +630,16 @@ description = "Stop the database servers and remove everything under build/ but 
 run = "find build -mindepth 1 -maxdepth 1 ! -name downloads -exec rm -rf {} +"
 shell = "{{ vars.shell }}"
 
+# Each package ships a copy of LICENSE, as neither can include a file from outside its own directory.
+[tasks.license-check]
+description = "Check python/LICENSE and rust/LICENSE are copies of LICENSE"
+run = """
+for copy in python/LICENSE rust/LICENSE; do
+  cmp LICENSE "$copy" || { echo "$copy differs from LICENSE: copy LICENSE over it" >&2; exit 1; }
+done
+"""
+shell = "{{ vars.shell }}"
+
 [tasks.editorconfig-check]
 alias = "ec"
 run = "editorconfig-checker"
@@ -748,6 +758,7 @@ depends = [
   "cargo-fmt-check",
   "editorconfig-check",
   "gha-uses-check",
+  "license-check",
   "pyrefly-check",
   "ruff-check",
   "ruff-fmt-check",

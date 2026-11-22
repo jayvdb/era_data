@@ -18,6 +18,10 @@ download somewhere else.
 - `era_data.ntriples()` returns them as N-Triples text.
 - `era_data.path()` returns the path of the file.
 
+`era_data.graph()` is slow: rdflib parses the 1.6 million triples into memory, which takes about two minutes and
+2 GB of memory on a 2019 laptop. Where that matters, load the graph once and keep it, or give `era_data.path()` or
+`era_data.ntriples()` to a faster RDF library or a triple store.
+
 `examples/journal_history.py` prints how one journal changed from list to list: its titles, fields of research,
 ISSNs and, in ERA 2010, its rank. It defaults to ERA ID 4465, IEEE Transactions on Cybernetics:
 
