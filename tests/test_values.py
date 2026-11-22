@@ -109,6 +109,27 @@ def test_2015_submitted_southerly(connection):
     assert result == [("190000",), ("200000",), ("210000",)]
 
 
+def test_2018_southerly(connection):
+    era2018_journals = Table("era2018_journal", metadata, autoload_with=connection)
+    query = select(era2018_journals.columns.title).where(era2018_journals.columns.eraid == 11637)
+    result = connection.execute(query).first()[0]
+    assert result == "Southerly: a review of Australian literature"
+
+    era2018_journal_issn = Table("era2018_journal_issn", metadata, autoload_with=connection)
+    query = select(era2018_journal_issn.columns.issn).where(era2018_journal_issn.columns.eraid == 11637)
+    result = connection.execute(query).fetchall()
+    assert result == [("0038-3732",)]
+
+    era2018_journal_for = Table("era2018_journal_for", metadata, autoload_with=connection)
+    query = (
+        select(era2018_journal_for.columns.discipline)
+        .where(era2018_journal_for.columns.eraid == 11637)
+        .order_by(era2018_journal_for.columns.discipline)
+    )
+    result = connection.execute(query).fetchall()
+    assert result == [("190000",), ("200000",), ("210000",)]
+
+
 def test_2012_unicode(connection):
     era2012_journals = Table("era2012_journal", metadata, autoload_with=connection)
     query = select(era2012_journals.columns.foreign_title).where(era2012_journals.columns.eraid == 6859)

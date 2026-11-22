@@ -24,8 +24,8 @@ import rdflib
 __version__ = "0.1.0"
 
 # The release the data comes from, and the checksum of the N-Triples text in its file; `mise run pin` writes both.
-RELEASE = "data-v3"
-SHA256 = "c341bf64bd9035e9ded5fb7ee649e44b4571b097b396703f1657b2e7bd107d7c"
+RELEASE = "data-v4"
+SHA256 = "d19523afc818472615544ed3b89e96f1b5622fb6e723dc3d30d7175ac4b05892"
 FILE = "era_data.nt.gz"
 URL = f"https://github.com/jayvdb/era_data/releases/download/{RELEASE}/{FILE}"
 

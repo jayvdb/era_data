@@ -20,8 +20,9 @@ their website, and the copyright notice did not mention CC licenses when these
 datasets were available from their website.
 
 To avoid this copyright problem, this repository does not contain any ERA data.
-Instead it provides tools to fetch and transform the datasets into other formats,
-and will do analysis on the dataset in the cloud.
+Instead it provides tools to fetch the datasets and extract the facts in them: each journal's titles, ISSNs,
+fields of research and rank. Those facts, and none of the original files, are published as a SQLite database and
+an RDF triple store on this repository's GitHub releases, described under Releases below.
 
 All files stored in this repository are available under the MIT license.
 
@@ -35,6 +36,7 @@ The `download` task in `mise.toml` fetches the following from the [Internet Arch
 * ERA 2015 journal list
 * ERA 2015 consultation journal list
 * ERA 2015 submitted journal list
+* ERA 2018 journal list
 * ANZSRC 2008 and ANZSRC 2020 Fields of Research and Socio-Economic Objectives,
   from the Australian Bureau of Statistics (ABS)
 
@@ -55,8 +57,8 @@ or `MD` for multidisciplinary. The editions each round used:
 | Engagement and Impact (EI) 2018     | ANZSRC 2008 FoR, and SEO for its impact studies           |
 | ERA 2023, stopped before assessment | ANZSRC 2020 FoR                                           |
 
-The tests check this for the lists here: every code that the 2010, 2012 and 2015 lists assign is an ANZSRC 2008
-division or group, and some of them are not ANZSRC 2020 codes.
+The tests check this for the lists here: every code that the 2010, 2012, 2015 and 2018 lists assign is an ANZSRC
+2008 division or group, and some of them are not ANZSRC 2020 codes.
 
 ANZSRC 2008 was released on 31 March 2008. It replaced the Australian Standard Research Classification (ASRC) 1998,
 whose Research Fields, Courses and Disciplines (RFCD) classification FoR replaced, and whose SEO it revised.
@@ -112,8 +114,8 @@ The servers keep running after the tests, for looking at the data; `mise run db:
 ## Releases
 
 Each release has `era_data.sqlite.gz`, a single SQLite database holding every journal list above,
-in the tables `era2010_journal`, `era2012_journal`, `era2015_journal`, `era2015c_journal` (consultation)
-and `era2015s_journal` (submitted), each with its `_issn` and `_for` (field of research) tables,
+in the tables `era2010_journal`, `era2012_journal`, `era2015_journal`, `era2015c_journal` (consultation),
+`era2015s_journal` (submitted) and `era2018_journal`, each with its `_issn` and `_for` (field of research) tables,
 and the ANZSRC tables described above.
 It is the data this pipeline produces, tested, not the original files, and `era_data.sqlite.gz.sha256`
 holds its checksum.
@@ -132,7 +134,7 @@ and fields of research, which the SQLite tables keep in `column_id`; use the dat
   `https://jayvdb.github.io/era_data/vocab#`: `eraId`, `journalList`, `multidisciplinary`, `foreignTitle`, `rank`
   (ERA 2010 only) and `fieldOfResearch`, which is the ANZSRC 2008 concept.
 
-`mise run release` builds the same files into `build/release/`. Pushing a tag such as `data-v3` runs the release
+`mise run release` builds the same files into `build/release/`. Pushing a tag such as `data-v4` runs the release
 workflow, which builds them afresh and attaches them to that tag's release.
 
 ## Packages
@@ -154,7 +156,7 @@ Neither holds any data. On first use each downloads `era_data.nt.gz` from its re
 the file in the user's cache directory. `ERA_DATA_NT` names a local copy to use instead.
 
 `mise run test:packages` tests both against a fresh `build/era_data.nt.gz`. Before pushing a `data-v*` tag, run
-`TAG=data-v3 mise run pin` to pin both packages to that release and the file's checksum, and commit the result.
+`TAG=data-v4 mise run pin` to pin both packages to that release and the file's checksum, and commit the result.
 The release workflow checks the pins, and publishes nothing when they do not match the file it builds.
 
 ## Contributing

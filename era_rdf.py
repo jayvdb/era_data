@@ -42,6 +42,7 @@ LISTS = {
     "era2015": "ERA 2015 journal list",
     "era2015c": "ERA 2015 consultation journal list",
     "era2015s": "ERA 2015 submitted journal list",
+    "era2018": "ERA 2018 journal list",
 }
 LIST_FOR = "anzsrc2008_for"
 

@@ -64,4 +64,6 @@ convention = "pep257"
 # Test modules: docstrings on test functions are noise, not API surface.
 # pytest collects tests/ as rootdir-relative modules, so it is not a package.
 "python/tests/**" = ["D", "INP001"]
+# The examples are scripts, run on their own rather than imported from a package.
+"python/examples/**" = ["INP001"]
 "tests/**" = ["D", "INP001"]
