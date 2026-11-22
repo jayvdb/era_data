@@ -1,0 +1,22 @@
+// dprint's config, which .dprint.jsonc at the repository root extends.
+// dprint formats the CSS, HTML, JSON, Markdown and YAML. The JavaScript is oxfmt's, the TOML taplo's, the Python
+// ruff's and the Rust rustfmt's, so it has no plugin for those.
+{
+  // The line limit .editorconfig sets for every file.
+  "lineWidth": 120,
+  "json": {},
+  "malva": {},
+  "markdown": {},
+  "markup": {},
+  "yaml": {},
+  // vocab_md.py writes VOCAB.md, so its formatting is the generator's. An XSLT stylesheet's whitespace can reach
+  // what it outputs, so the stylesheets keep theirs.
+  "excludes": ["VOCAB.md", "*.xsl"],
+  "plugins": [
+    "https://plugins.dprint.dev/g-plane/malva-v0.15.2.wasm",
+    "https://plugins.dprint.dev/g-plane/markup_fmt-v0.27.0.wasm",
+    "https://plugins.dprint.dev/g-plane/pretty_yaml-v0.6.0.wasm",
+    "https://plugins.dprint.dev/json-0.21.3.wasm",
+    "https://plugins.dprint.dev/markdown-0.21.1.wasm",
+  ],
+}

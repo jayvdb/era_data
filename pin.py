@@ -1,11 +1,11 @@
-"""Pin the python/ and rust/ packages to a release and the checksum of its triple store, or check that they are.
+"""Pin the packages and the website to a release and the checksum of its triple store, or check that they are.
 
 Usage: python pin.py [--check] <release tag> <era_data.nt.gz>
 
-Each package names the release it downloads era_data.nt.gz from, and the SHA-256 of the N-Triples text in it,
-which it checks the download against. This writes both into both packages. With --check it changes nothing, and
-fails unless both packages already name that release and that checksum, as the release workflow requires before it
-publishes.
+The python/ and rust/ packages and the website's build, web/build.mjs, each name the release they download
+era_data.nt.gz from, and the SHA-256 of the N-Triples text in it, which they check the download against. This
+writes both into each. With --check it changes nothing, and fails unless each already names that release and that
+checksum, as the release workflow requires before it publishes.
 """
 
 import gzip
@@ -14,14 +14,15 @@ import re
 import sys
 from pathlib import Path
 
-# Each package's file, with the patterns of the lines naming its release and its checksum; the second group of each
-# is the value.
+# Each file that pins the release, with the patterns of the lines naming its release and its checksum; the second
+# group of each is the value.
 PACKAGES = {
     Path("python/src/era_data/__init__.py"): (r'^(RELEASE = ")([^"]*)(")$', r'^(SHA256 = ")([^"]*)(")$'),
     Path("rust/src/lib.rs"): (
         r'^(pub const RELEASE: &str = ")([^"]*)(";)$',
         r'^(pub const SHA256: &str = ")([^"]*)(";)$',
     ),
+    Path("web/build.mjs"): (r'^(const RELEASE = ")([^"]*)(";)$', r'^(const SHA256 = ")([^"]*)(";)$'),
 }
 
 
@@ -40,7 +41,7 @@ def pinned(text, pattern):
 
 
 def main(*args):
-    """Pin, or with --check verify, the packages; return the process exit status."""
+    """Pin, or with --check verify, each file in PACKAGES; return the process exit status."""
     check = args[:1] == ("--check",)
     tag, file = args[1:] if check else args
     values = (tag, sha256(file))

@@ -1,0 +1,5 @@
+# What a `vercel deploy` from a working copy leaves out: the pipeline's downloads and outputs, and local builds.
+.venv/
+build/
+target/
+web/dist/

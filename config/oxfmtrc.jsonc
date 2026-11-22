@@ -1,0 +1,8 @@
+// oxfmt's config. oxfmt reads only JSON or JSONC.
+// The oxfmt tasks in mise.toml give it the JavaScript alone, and dprint formats every other kind of file it knows,
+// so the two never format the same file.
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxfmt/configuration_schema.json",
+  // The line limit .editorconfig sets for every file.
+  "printWidth": 120,
+}

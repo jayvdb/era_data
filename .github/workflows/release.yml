@@ -39,8 +39,8 @@ jobs:
       - name: Build the data file
         run: mise run release
 
-      # A data-v* release is the one the python/ and rust/ packages download, so its file must be the one they pin.
-      # `mise run pin` pins them; this fails the release rather than publish a file the packages would reject.
+      # A data-v* release is the one the python/ and rust/ packages and the website download, so its file must be
+      # the one they pin. `mise run pin` pins them; this fails the release rather than publish a file they would reject.
       - name: Check the packages pin this file
         if: startsWith(github.ref_name, 'data-v')
         env:

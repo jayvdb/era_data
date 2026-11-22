@@ -42,9 +42,12 @@ python.uv_venv_auto = true
 # aqua/github ship no Windows build of action-validator, so it is scoped off Windows, where no check runs.
 action-validator = { version = "latest", os = ["linux", "macos"] }
 actionlint = "latest"
+dprint = "latest"
 editorconfig-checker = "latest"
 # agent-lint publishes binaries for Linux and Apple-silicon macOS only, so it is scoped to those.
 "github:zhupanov/agent-lint" = { version = "latest", os = ["linux", "macos/arm64"] }
+# node builds the website in web/, and on Vercel is the one tool installed.
+node = "24"
 "pipx:pyrefly" = "latest"
 # semgrep 1.182.0 is the last release with a macOS x86_64 wheel, so macos/x64 stays on it.
 # Its pyjwt dependency pulls cryptography, whose 48.x is likewise the last with a macOS x86_64 wheel.
@@ -63,6 +66,40 @@ taplo = "latest"
 typos = "latest"
 uv = "latest"
 zizmor = "latest"
+
+# oxlint and oxfmt are oxc's JavaScript linter and formatter, for web/.
+# They come from oxc's `apps_v<version>` GitHub release, which ships both: aqua's registry entry trips mise's date
+# filter on the `apps_v` tag prefix (https://github.com/oxc-project/oxc/discussions/14452), and neither is a crates.io
+# crate. `rename_exe` drops the target triple the release's binaries are named with, so each is on PATH by its name.
+[tools."http:oxlint"]
+bin = "oxlint"
+rename_exe = "oxlint"
+version = "1.73.0"
+[tools."http:oxlint".platforms.linux-arm64]
+url = "https://github.com/oxc-project/oxc/releases/download/apps_v{{version}}/oxlint-aarch64-unknown-linux-gnu.tar.gz"
+[tools."http:oxlint".platforms.linux-x64]
+url = "https://github.com/oxc-project/oxc/releases/download/apps_v{{version}}/oxlint-x86_64-unknown-linux-gnu.tar.gz"
+[tools."http:oxlint".platforms.macos-arm64]
+url = "https://github.com/oxc-project/oxc/releases/download/apps_v{{version}}/oxlint-aarch64-apple-darwin.tar.gz"
+[tools."http:oxlint".platforms.macos-x64]
+url = "https://github.com/oxc-project/oxc/releases/download/apps_v{{version}}/oxlint-x86_64-apple-darwin.tar.gz"
+[tools."http:oxlint".platforms.windows-x64]
+url = "https://github.com/oxc-project/oxc/releases/download/apps_v{{version}}/oxlint-x86_64-pc-windows-msvc.zip"
+
+[tools."http:oxfmt"]
+bin = "oxfmt"
+rename_exe = "oxfmt"
+version = "1.73.0"
+[tools."http:oxfmt".platforms.linux-arm64]
+url = "https://github.com/oxc-project/oxc/releases/download/apps_v{{version}}/oxfmt-aarch64-unknown-linux-gnu.tar.gz"
+[tools."http:oxfmt".platforms.linux-x64]
+url = "https://github.com/oxc-project/oxc/releases/download/apps_v{{version}}/oxfmt-x86_64-unknown-linux-gnu.tar.gz"
+[tools."http:oxfmt".platforms.macos-arm64]
+url = "https://github.com/oxc-project/oxc/releases/download/apps_v{{version}}/oxfmt-aarch64-apple-darwin.tar.gz"
+[tools."http:oxfmt".platforms.macos-x64]
+url = "https://github.com/oxc-project/oxc/releases/download/apps_v{{version}}/oxfmt-x86_64-apple-darwin.tar.gz"
+[tools."http:oxfmt".platforms.windows-x64]
+url = "https://github.com/oxc-project/oxc/releases/download/apps_v{{version}}/oxfmt-x86_64-pc-windows-msvc.zip"
 
 [env]
 _.python.venv = { path = ".venv", create = true }
@@ -593,7 +630,7 @@ shell = "{{ vars.shell }}"
 
 [tasks.pin]
 depends = ["rdf"]
-description = "Pin the python/ and rust/ packages to the release $TAG and the checksum of build/era_data.nt.gz"
+description = "Pin the packages and the website to the release $TAG and the checksum of build/era_data.nt.gz"
 # Run before pushing a data-v* tag, and commit the result: the release workflow refuses to publish otherwise.
 run = """
 : "${TAG:?set TAG to the release tag, such as data-v4}"
@@ -602,6 +639,19 @@ python pin.py "$TAG" build/era_data.nt.gz
 shell = "{{ vars.shell }}"
 
 # The packages' tests read build/era_data.nt.gz rather than downloading the release's file.
+[tasks.web]
+description = "Build the website into web/dist: the search page in web/static and the triple store it loads"
+# The triple store is the release's that pin.py pins the website to; ERA_DATA_NT names another copy to use instead,
+# such as the pipeline's build/era_data.nt.gz. vercel.json has Vercel run this task, with node the only tool.
+run = "node web/build.mjs"
+shell = "{{ vars.shell }}"
+
+[tasks."web:serve"]
+depends = ["web"]
+description = "Build the website, then serve web/dist at http://localhost:8000"
+run = "python -m http.server --directory web/dist 8000"
+shell = "{{ vars.shell }}"
+
 [tasks."test:python"]
 depends = ["deps", "rdf"]
 description = "Test the python/ package against build/era_data.nt.gz"
@@ -749,6 +799,39 @@ shell = "{{ vars.shell }}"
 run = "ruff format --config config/ruff.toml"
 shell = "{{ vars.shell }}"
 
+[tasks.dprint-check]
+description = "Check the formatting of the CSS, HTML, JSON, Markdown and YAML with dprint"
+env = { DPRINT_CACHE_DIR = "{{ config_root }}/build/dprint-cache" }
+run = "dprint check"
+shell = "{{ vars.shell }}"
+
+[tasks.dprint-fmt]
+description = "Format the CSS, HTML, JSON, Markdown and YAML with dprint"
+env = { DPRINT_CACHE_DIR = "{{ config_root }}/build/dprint-cache" }
+run = "dprint fmt"
+shell = "{{ vars.shell }}"
+
+[tasks.oxlint-check]
+description = "Lint the JavaScript in web/ with oxlint"
+# oxlint finds the files itself, leaving out what .gitignore does, such as web/dist/.
+run = "oxlint --config config/oxlintrc.jsonc --deny-warnings"
+shell = "{{ vars.shell }}"
+
+[tasks.oxlint-fix]
+description = "Fix what oxlint reports that it has a fix for"
+run = "oxlint --config config/oxlintrc.jsonc --fix"
+shell = "{{ vars.shell }}"
+
+[tasks.oxfmt-check]
+description = "Check the formatting of the JavaScript with oxfmt"
+run = "oxfmt --config config/oxfmtrc.jsonc --check '**/*.js' '**/*.mjs'"
+shell = "{{ vars.shell }}"
+
+[tasks.oxfmt-fmt]
+description = "Format the JavaScript with oxfmt"
+run = "oxfmt --config config/oxfmtrc.jsonc --write '**/*.js' '**/*.mjs'"
+shell = "{{ vars.shell }}"
+
 [tasks.check]
 depends = [
   "action-validator-check",
@@ -756,9 +839,12 @@ depends = [
   "agent-lint-check",
   "cargo-clippy-check",
   "cargo-fmt-check",
+  "dprint-check",
   "editorconfig-check",
   "gha-uses-check",
   "license-check",
+  "oxfmt-check",
+  "oxlint-check",
   "pyrefly-check",
   "ruff-check",
   "ruff-fmt-check",

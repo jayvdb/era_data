@@ -14,10 +14,10 @@ The Australian Research Council (ARC) has licensed its website differently over 
 [copyright notice](https://www.arc.gov.au/about-arc/strategies-and-policies/copyright) and the Internet Archive's
 copies of it and its earlier versions:
 
-* Until early 2014, all rights were reserved, beyond reproducing material unaltered for personal or internal use.
-* From early 2014 until 2018, it was under [CC BY 3.0 AU](https://creativecommons.org/licenses/by/3.0/au/), with an
+- Until early 2014, all rights were reserved, beyond reproducing material unaltered for personal or internal use.
+- From early 2014 until 2018, it was under [CC BY 3.0 AU](https://creativecommons.org/licenses/by/3.0/au/), with an
   "Other Copyright" section, as restrictive as before, for material that licence does not cover.
-* Since 2018, by September, it has been under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/),
+- Since 2018, by September, it has been under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/),
   except for the Commonwealth Coat of Arms, the ARC logo, images, signatures and "where otherwise stated".
   Its NonCommercial term rules out commercial use, and its NoDerivatives term rules out sharing adapted material.
 
@@ -47,15 +47,15 @@ All files stored in this repository are available under the MIT license, in [LIC
 
 The `download` task in `mise.toml` fetches the following from the [Internet Archive](https://web.archive.org/):
 
-* ERA 2010 tech pack, which contains the ERA 2010 journal and conference lists
-* ERA 2012 tech pack, which has no journal list in it
-* ERA 2012 journal list
-* ERA 2015 journal list and conference list
-* ERA 2015 consultation journal list
-* ERA 2015 submitted journal list
-* ERA 2018 journal list
-* ERA 2023 journal list, as first published in July 2022 and as revised later that year
-* ANZSRC 2008 and ANZSRC 2020 Fields of Research and Socio-Economic Objectives,
+- ERA 2010 tech pack, which contains the ERA 2010 journal and conference lists
+- ERA 2012 tech pack, which has no journal list in it
+- ERA 2012 journal list
+- ERA 2015 journal list and conference list
+- ERA 2015 consultation journal list
+- ERA 2015 submitted journal list
+- ERA 2018 journal list
+- ERA 2023 journal list, as first published in July 2022 and as revised later that year
+- ANZSRC 2008 and ANZSRC 2020 Fields of Research and Socio-Economic Objectives,
   from the Australian Bureau of Statistics (ABS)
 
 ## The end of ERA
@@ -70,13 +70,13 @@ proposed Research Insights Capability. Whether it will publish lists like these 
 
 Three later rounds had conference lists besides ERA 2010's, but only two of the four are public:
 
-| Round    | Conference list                                                                          | Here |
-| -------- | ---------------------------------------------------------------------------------------- | ---- |
-| ERA 2010 | 1,952 conferences, ranked A, B or C, with up to three fields of research                 | yes  |
-| ERA 2012 | none: its guidelines say "The ERA Conference ID is no longer required"                   | --   |
+| Round    | Conference list                                                                         | Here |
+| -------- | --------------------------------------------------------------------------------------- | ---- |
+| ERA 2010 | 1,952 conferences, ranked A, B or C, with up to three fields of research                | yes  |
+| ERA 2012 | none: its guidelines say "The ERA Conference ID is no longer required"                  | --   |
 | ERA 2015 | the submission conference list: 3,735 conferences, with fields of research but no ranks | yes  |
-| ERA 2018 | a submission conference list, without fields of research, sent to universities           | no   |
-| ERA 2023 | a submission conference list, without fields of research, sent to universities           | no   |
+| ERA 2018 | a submission conference list, without fields of research, sent to universities          | no   |
+| ERA 2023 | a submission conference list, without fields of research, sent to universities          | no   |
 
 No public copy of the ERA 2018 or ERA 2023 list is archived: neither is on the ARC's website or in its ERA 2018
 technology pack. The pipeline reads the ERA 2010 list from the spreadsheet in its tech pack,
@@ -144,13 +144,13 @@ and runs the tests.
 
 The same pipeline runs against each of the four supported databases:
 
-| Task                    | Database                                                                    |
-| ----------------------- | --------------------------------------------------------------------------- |
-| `mise run test:sqlite3` | SQLite, the same as `mise run test`                                         |
-| `mise run test:pgsql`   | PostgreSQL, a local server in `build/pgsql/` on 127.0.0.1:55432             |
-| `mise run test:mysql`   | MySQL, a local server in `build/mysql/` on 127.0.0.1:53306                  |
-| `mise run test:oracle`  | Oracle Database Free, in the `gvenzl/oracle-free` container; needs Docker   |
-| `mise run test:all`     | All four, one after another                                                 |
+| Task                    | Database                                                                  |
+| ----------------------- | ------------------------------------------------------------------------- |
+| `mise run test:sqlite3` | SQLite, the same as `mise run test`                                       |
+| `mise run test:pgsql`   | PostgreSQL, a local server in `build/pgsql/` on 127.0.0.1:55432           |
+| `mise run test:mysql`   | MySQL, a local server in `build/mysql/` on 127.0.0.1:53306                |
+| `mise run test:oracle`  | Oracle Database Free, in the `gvenzl/oracle-free` container; needs Docker |
+| `mise run test:all`     | All four, one after another                                               |
 
 mise installs PostgreSQL and MySQL along with the other tools, on Linux, macOS and Windows; set `PGPORT` or
 `MYSQL_TCP_PORT` to use other ports. The tasks run in bash, which on Windows is Git Bash's.
@@ -174,16 +174,16 @@ N-Triples, one triple per line, sorted, and ASCII-only, with any other character
 each journal's ISSNs and fields of research, which the SQLite tables keep in `column_id`; use the database where that
 order matters.
 
-* Each ANZSRC classification is a SKOS concept scheme, and each code a `skos:Concept` with its `skos:notation`,
+- Each ANZSRC classification is a SKOS concept scheme, and each code a `skos:Concept` with its `skos:notation`,
   `skos:prefLabel` and `skos:broader` code. ANZSRC 2020 codes have the IRIs the ABS and ARDC publish them under, such
   as `https://linked.data.gov.au/def/anzsrc-for/2020/4601`, and ANZSRC 2008 codes those of ARDC's vocabularies,
   such as `http://purl.org/au-research/vocabulary/anzsrc-for/2008/0801`.
-* Each journal list is under `https://jayvdb.github.io/era_data/`, as `<era2010>` and so on, and each journal in it
+- Each journal list is under `https://jayvdb.github.io/era_data/`, as `<era2010>` and so on, and each journal in it
   as `<era2010/journal/11637>`. A list has its `dcterms:title` and `fieldOfResearchScheme`, the ANZSRC edition it
   assigns. A journal has its `dcterms:title`, `bibo:issn`s and the terms of `https://jayvdb.github.io/era_data/vocab#`:
   `eraId`, `journalList`, `multidisciplinary`, `foreignTitle`, `rank` (ERA 2010 only) and `fieldOfResearch`, which is
   the ANZSRC concept: of ANZSRC 2008, or for the ERA 2023 lists, ANZSRC 2020.
-* Each conference list is `<era2010-conferences>` or `<era2015-conferences>`, and each conference on it as
+- Each conference list is `<era2010-conferences>` or `<era2015-conferences>`, and each conference on it as
   `<era2010-conferences/conference/42269>`, with the same terms as a journal but `acronym` in place of
   `foreignTitle` and `bibo:issn`, and `conferenceList` in place of `journalList`.
 
@@ -215,8 +215,17 @@ Neither holds any data. On first use each downloads `era_data.nt.gz` from its re
 the file in the user's cache directory. `ERA_DATA_NT` names a local copy to use instead.
 
 `mise run test:packages` tests both against a fresh `build/era_data.nt.gz`. Before pushing a `data-v*` tag, run
-`TAG=data-v4 mise run pin` to pin both packages to that release and the file's checksum, and commit the result.
-The release workflow checks the pins, and publishes nothing when they do not match the file it builds.
+`TAG=data-v4 mise run pin` to pin both packages and the website to that release and the file's checksum, and commit
+the result. The release workflow checks the pins, and publishes nothing when they do not match the file it builds.
+
+## Website
+
+`web/` is a static page that searches the triple store in the browser. It downloads `era_data.nt.gz`, reads it in a
+Web Worker, and finds journals and conferences by title, acronym, ISSN or ERA ID, showing each one list by list.
+
+`mise run web` builds it into `web/dist/`, with the triple store of the release `web/build.mjs` pins, and
+`mise run web:serve` serves it at http://localhost:8000. `ERA_DATA_NT=build/era_data.nt.gz` builds it with the
+pipeline's own file instead. `vercel.json` deploys it on Vercel, which runs the same task.
 
 ## Contributing
 

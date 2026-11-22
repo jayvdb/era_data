@@ -1,0 +1,19 @@
+// oxlint's config for the JavaScript in web/. oxlint reads only JSON or JSONC.
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  // web/static/ runs in a browser page and its worker, which give it their globals.
+  "env": { "browser": true, "worker": true, "es2024": true },
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error",
+  },
+  "rules": {
+    // A name used but never declared throws a ReferenceError at run time.
+    "eslint/no-undef": "error",
+    // A ceiling on how branchy a function gets.
+    "eslint/complexity": ["error", { "max": 10 }],
+    // A worker's postMessage takes no target origin, unlike a window's, and the rule cannot tell them apart.
+    "unicorn/require-post-message-target-origin": "off",
+  },
+}
