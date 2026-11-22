@@ -167,6 +167,11 @@ function resultItem(record, current) {
   return el("li", {}, button);
 }
 
+// Return an ISSN linked to its record in the ISSN Portal, the ISSN International Centre's register of every ISSN.
+function issnLink(issn) {
+  return el("a", { href: `https://portal.issn.org/resource/ISSN/${encodeURIComponent(issn)}`, rel: "external" }, issn);
+}
+
 // Return a field of research as its code and label, linked to the ANZSRC concept.
 function field(iri) {
   const [notation, label] = concepts[iri] || ["", iri];
@@ -204,7 +209,10 @@ function showRecord(record, focus) {
         titleRows,
         row("Foreign title", entry.foreignTitles.join("; ")),
         row("Acronym", entry.acronym),
-        row("ISSN", entry.issns.join(", ")),
+        row(
+          "ISSN",
+          entry.issns.flatMap((issn, n) => [n > 0 && ", ", issnLink(issn)]),
+        ),
         row("Multidisciplinary", entry.multidisciplinary && "Yes"),
         row("Fields of research", entry.fields.length > 0 && el("ul", {}, entry.fields.map(field))),
       ),
