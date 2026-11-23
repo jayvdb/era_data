@@ -674,15 +674,21 @@ shell = "{{ vars.shell }}"
 depends = ["test:python", "test:rust"]
 description = "Test the python/ and rust/ packages"
 
-# uv keeps no credentials, so the PyPI token comes from the macOS Keychain item pypi-token, which
-# `security add-generic-password -a "$USER" -s pypi-token -w` stores.
+# uv keeps no credentials, so the PyPI token comes from the macOS Keychain item pypi-token. With the token on the
+# clipboard, `security add-generic-password -U -a "$USER" -s pypi-token -w "$(pbpaste)"` stores it, replacing any
+# there. Left to prompt for the token, security keeps only its first 128 characters, and a token is longer.
 [tasks.macos-python-publish]
-description = "Upload python/dist/ to PyPI, with the token from the macOS Keychain item pypi-token"
-# `uv build python --clear` writes python/dist/. The token is read in a statement of its own, so that a missing
-# Keychain item stops the task rather than leaving uv to prompt for a username.
+description = "Build python/ and upload it to PyPI, with the token from the macOS Keychain item pypi-token"
+# --clear empties python/dist/ before the build, so only this build's files are uploaded.
+# The token is read in a statement of its own and checked, so that a missing or empty Keychain item stops the task
+# rather than leaving uv to prompt for a username.
+# --check-url has uv skip a file PyPI already holds rather than fail on it, so a run that stopped halfway is safe to
+# repeat.
 run = """
+uv build python --clear
 token="$(security find-generic-password -s pypi-token -w)"
-UV_PUBLISH_TOKEN="$token" uv publish python/dist/*
+: "${token:?the macOS Keychain item pypi-token is empty}"
+UV_PUBLISH_TOKEN="$token" uv publish --check-url https://pypi.org/simple/ python/dist/*
 """
 shell = "{{ vars.shell }}"
 
