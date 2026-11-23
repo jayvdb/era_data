@@ -1,5 +1,17 @@
 # ERA data
 
+[![PyPI][pypi-badge]][pypi] [![crates.io][crate-badge]][crate] [![License][license-badge]][license]
+[![Open Hub][openhub-badge]][openhub] <!-- Cloudflare blocks GitHub's image proxy from Open Hub's own badges. -->
+
+[pypi-badge]: https://img.shields.io/pypi/v/era-data
+[pypi]: https://pypi.org/project/era-data/
+[crate-badge]: https://img.shields.io/crates/v/era_data
+[crate]: https://crates.io/crates/era_data
+[license-badge]: https://img.shields.io/badge/license-MIT-blue
+[license]: LICENSE
+[openhub-badge]: https://img.shields.io/badge/Open%20Hub-era__data-0082c6?labelColor=5a2a82
+[openhub]: https://openhub.net/p/era_data
+
 This repository contains tools to fetch and load data from the
 [Excellence in Research for Australia](https://en.wikipedia.org/wiki/Excellence_in_Research_for_Australia)
 program (ERA) into a database.
