@@ -674,6 +674,18 @@ shell = "{{ vars.shell }}"
 depends = ["test:python", "test:rust"]
 description = "Test the python/ and rust/ packages"
 
+# uv keeps no credentials, so the PyPI token comes from the macOS Keychain item pypi-token, which
+# `security add-generic-password -a "$USER" -s pypi-token -w` stores.
+[tasks.macos-python-publish]
+description = "Upload python/dist/ to PyPI, with the token from the macOS Keychain item pypi-token"
+# `uv build python --clear` writes python/dist/. The token is read in a statement of its own, so that a missing
+# Keychain item stops the task rather than leaving uv to prompt for a username.
+run = """
+token="$(security find-generic-password -s pypi-token -w)"
+UV_PUBLISH_TOKEN="$token" uv publish python/dist/*
+"""
+shell = "{{ vars.shell }}"
+
 [tasks.clean]
 depends = ["db:stop"]
 description = "Stop the database servers and remove everything under build/ but build/downloads/"

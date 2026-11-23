@@ -4,6 +4,9 @@ This repository contains tools to fetch and load data from the
 [Excellence in Research for Australia](https://en.wikipedia.org/wiki/Excellence_in_Research_for_Australia)
 program (ERA) into a database.
 
+The journal and conference lists can be searched at [era-open-data.vercel.app](https://era-open-data.vercel.app/),
+the website described under Website below.
+
 The motivation is the reference data for 2010 and 2012 ERA came in slightly different formats,
 and the data had unusual copyright protections when it was released from the Australian Research Council (ARC),
 in part due to [the Australian Crown copyright](https://en.wikipedia.org/wiki/Crown_copyright#Australia).
